@@ -1,6 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-night-900: #0a0a1a;
+  --color-night-800: #1a1a2e;
+  --color-night-700: #16213e;
+  --color-violet-900: #2e0249;
+  --color-violet-800: #570a57;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+  --color-gold-glow: #ffaa00;
+  --color-grey-900: #111827;
+  --color-grey-800: #1f2937;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Merriweather', serif;
+  
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+}
 
 @layer base {
   body {

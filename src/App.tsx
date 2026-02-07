@@ -1,4 +1,3 @@
-import React from 'react';
 import Hero from './components/sections/Hero';
 import MemberCounter from './components/sections/MemberCounter';
 import Activities from './components/sections/Activities';
