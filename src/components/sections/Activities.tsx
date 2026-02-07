@@ -1,34 +1,29 @@
 import React from 'react';
-import { HoverCard, TiltCard } from '../ui/Cards';
-import { StaggeredFadeIn, GlowEffect } from '../ui/Effects';
-import { Gamepad2, Mic, Coffee, MessageCircle } from 'lucide-react';
+import CircularGallery from '../ui/CircularGallery';
+import { GlowEffect } from '../ui/Effects';
 
 const Activities: React.FC = () => {
-  const activities = [
+  const galleryItems = [
     {
-      icon: <Gamepad2 className="w-8 h-8 text-violet-400" />,
-      title: "Gaming ensemble",
-      description: "Des sessions multijoueurs endiablées ou chill, selon l'humeur du soir."
+      image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=800&auto=format&fit=crop",
+      text: "Gaming ensemble"
     },
     {
-      icon: <Mic className="w-8 h-8 text-gold-400" />,
-      title: "Vocaux chill",
-      description: "On discute de tout et de rien, sans prise de tête, juste pour le plaisir d'être ensemble."
+      image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=800&auto=format&fit=crop",
+      text: "Vocaux chill"
     },
     {
-      icon: <Coffee className="w-8 h-8 text-orange-400" />,
-      title: "Moments détente",
-      description: "Pause café virtuelle, lecture, ou simplement écouter de la musique ensemble."
+      image: "https://images.unsplash.com/photo-1510972527921-ce03766a1cf1?q=80&w=800&auto=format&fit=crop",
+      text: "Moments détente"
     },
     {
-      icon: <MessageCircle className="w-8 h-8 text-blue-400" />,
-      title: "Discussions libres",
-      description: "Un espace pour débattre, raconter sa journée ou partager ses passions."
+      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop",
+      text: "Discussions libres"
     }
   ];
 
   return (
-    <section id="activities" className="py-24 relative">
+    <section id="activities" className="py-24 relative overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 relative z-10">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Au programme</h2>
@@ -38,21 +33,17 @@ const Activities: React.FC = () => {
           <GlowEffect className="bg-violet-900/40 w-64 h-64 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[80px]" />
         </div>
 
-        <StaggeredFadeIn className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {activities.map((activity, index) => (
-            <TiltCard key={index} className="h-full">
-              <HoverCard className="h-full flex flex-col items-start gap-4 bg-transparent border-none p-0 hover:bg-transparent">
-                <div className="p-3 rounded-lg bg-night-900/50 border border-white/10 mb-2">
-                  {activity.icon}
-                </div>
-                <h3 className="text-xl font-bold text-white">{activity.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  {activity.description}
-                </p>
-              </HoverCard>
-            </TiltCard>
-          ))}
-        </StaggeredFadeIn>
+        <div style={{ height: '600px', position: 'relative' }}>
+          <CircularGallery 
+            items={galleryItems}
+            bend={3} 
+            textColor="#ffffff" 
+            borderRadius={0.05} 
+            scrollSpeed={2} 
+            scrollEase={0.05}
+            font="bold 30px 'Inter', sans-serif"
+          />
+        </div>
       </div>
     </section>
   );
