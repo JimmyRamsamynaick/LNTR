@@ -24,6 +24,9 @@ const roleConfig = [
   { id: DISCORD_CONFIG.ROLES.STAFF, label: 'Staff', icon: LucideShield, color: 'text-green-500', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
   { id: DISCORD_CONFIG.ROLES.ANIMATEUR, label: 'Animateur', icon: LucideZap, color: 'text-blue-500', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
   { id: DISCORD_CONFIG.ROLES.BOOSTER, label: 'Booster', icon: LucideZap, color: 'text-pink-500', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' },
+  { id: DISCORD_CONFIG.ROLES.VIP_ECLAT, label: 'VIP Éclat', icon: LucideSparkles, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+  { id: DISCORD_CONFIG.ROLES.VIP_LANTERNE, label: 'VIP Lanterne', icon: LucideZap, color: 'text-violet-400', bgColor: 'bg-violet-400/10', borderColor: 'border-violet-400/30' },
+  { id: DISCORD_CONFIG.ROLES.VIP_ETERNEL, label: 'VIP Éternel', icon: LucideCrown, color: 'text-yellow-500', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
   { id: DISCORD_CONFIG.ROLES.MEMBRE, label: 'Membre', icon: LucideUsers, color: 'text-gray-400', bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400/30' }
 ]
 
@@ -581,28 +584,10 @@ const UserProfile: React.FC = () => {
             </div>
           </div>
         </motion.div>
-                        setShoutMessage(`@${member.username} `)
-                        setShowShoutModal(true)
-                      }}
-                      className="px-8 py-3 bg-amber-600/10 border border-amber-600/20 text-amber-500 font-bold rounded-full hover:bg-amber-600 hover:text-black transition-all flex items-center gap-2"
-                    >
-                      <LucideMessageSquare size={18} /> Murmurer
-                    </button>
-                    
-                    <button 
-                      onClick={() => setShowChatModal(true)}
-                      className="px-8 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-full hover:bg-white/10 transition-all flex items-center gap-2"
-                    >
-                      <LucideMessageCircle size={18} /> Message Privé
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Private Message Modal */}
-            <AnimatePresence>
-              {showChatModal && (
+        {/* Private Message Modal */}
+        <AnimatePresence>
+          {showChatModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
