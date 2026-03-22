@@ -371,64 +371,69 @@ const UserProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-32 px-4 sm:px-6 md:px-12 bg-night-900 text-white overflow-hidden relative">
+    <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 md:px-12 bg-night-900 text-white overflow-x-hidden relative selection:bg-amber-500/30">
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-600/5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-900/5 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-amber-600/5 blur-[100px] md:blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-violet-900/5 blur-[100px] md:blur-[150px] rounded-full pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto relative z-10">
+      <div className="max-w-5xl mx-auto relative z-10">
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate('/members')}
-          className="flex items-center gap-2 text-gray-500 hover:text-amber-500 transition-colors mb-12 group"
+          className="flex items-center gap-2 text-gray-500 hover:text-amber-500 transition-colors mb-8 md:mb-12 group touch-manipulation"
         >
           <LucideArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-          Retour aux membres
+          <span className="text-sm font-bold uppercase tracking-widest">Retour aux membres</span>
         </motion.button>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-10"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10"
         >
           {/* Main Info Card */}
-          <div className="md:col-span-1">
-            <div className="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden text-center">
+          <div className="lg:col-span-4 xl:col-span-4">
+            <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden text-center shadow-2xl group/card">
               {/* Profile Banner */}
-              {member.bannerUrl ? (
-                <img 
-                  src={member.bannerUrl} 
-                  className="absolute top-0 left-0 w-full h-24 z-0 object-cover opacity-50" 
-                  alt="Banner"
-                />
-              ) : (
-                <div 
-                  className="absolute top-0 left-0 w-full h-24 z-0 opacity-50" 
-                  style={{ backgroundColor: member.bannerColor || 'transparent' }}
-                />
-              )}
+              <div className="absolute top-0 left-0 w-full h-28 md:h-32 z-0 overflow-hidden">
+                {member.bannerUrl ? (
+                  <img 
+                    src={member.bannerUrl} 
+                    className="w-full h-full object-cover opacity-40 group-hover/card:scale-110 transition-transform duration-700" 
+                    alt="Banner"
+                  />
+                ) : (
+                  <div 
+                    className="w-full h-full opacity-30 transition-colors duration-700" 
+                    style={{ backgroundColor: member.bannerColor || '#1a1a1a' }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-night-900/80" />
+              </div>
               
-              <div className="relative mb-6 mt-8">
-                <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125" />
-                <img
-                  src={member.avatar 
-                    ? `https://cdn.discordapp.com/avatars/${member.id}/${member.avatar}.png?size=256`
-                    : `https://cdn.discordapp.com/embed/avatars/${parseInt(member.id) % 5}.png`
-                  }
-                  alt={member.username}
-                  className="w-32 h-32 rounded-full border-4 border-white/10 relative z-10 shadow-2xl mx-auto"
-                />
+              <div className="relative mb-6 mt-12 md:mt-16">
+                <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full scale-125 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
+                <div className="relative p-1 rounded-full bg-gradient-to-tr from-amber-500/20 to-transparent">
+                  <img
+                    src={member.avatar 
+                      ? `https://cdn.discordapp.com/avatars/${member.id}/${member.avatar}.png?size=256`
+                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(member.id) % 5}.png`
+                    }
+                    alt={member.username}
+                    className="w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-night-900 relative z-10 shadow-2xl mx-auto object-cover"
+                  />
+                </div>
                 {/* Status Indicator (Dot only) */}
                 <StatusIndicator 
                   userId={member.id} 
                   size="lg"
-                  className="absolute bottom-2 right-1/4 z-20" 
+                  className="absolute bottom-2 right-1/4 z-20 border-4 border-night-900" 
                 />
               </div>
 
               <h2 
-                className={`text-3xl font-serif font-bold mb-1 tracking-tight truncate relative z-10 ${isEternel ? 'nickname-golden-animated' : ''}`} 
+                className={`text-2xl md:text-4xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${isEternel ? 'nickname-golden-animated' : ''}`} 
                 style={{ 
                   color: isEternel ? 'transparent' : (member.displayNameColor || '#FFFFFF'),
                   WebkitTextFillColor: isEternel ? 'transparent' : 'initial'
@@ -438,115 +443,144 @@ const UserProfile: React.FC = () => {
               </h2>
               
               {/* Badges Display under Username */}
-              <div className="flex flex-wrap justify-center gap-1.5 mb-4 relative z-10 px-2">
+              <div className="flex flex-wrap justify-center gap-2 mb-6 relative z-10 px-2">
                 {userBadges.map((badge, idx) => (
                   <div 
                     key={idx} 
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[9px] font-bold uppercase tracking-wider shadow-sm hover:scale-105 transition-transform cursor-default`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-110 transition-transform cursor-default touch-manipulation`}
                     title={badge.label}
                   >
-                    <badge.icon size={10} />
+                    <badge.icon size={12} />
                     {badge.label}
                   </div>
                 ))}
                 {userBadges.length === 0 && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-500 text-[9px] font-bold uppercase tracking-wider">
-                    <LucideUsers size={10} />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                    <LucideUsers size={12} />
                     Membre
                   </div>
                 )}
               </div>
 
               {member.custom_status && (
-                <p className="text-gray-500 italic text-sm mb-4 relative z-10 px-4">"{member.custom_status}"</p>
+                <div className="mb-6 relative z-10 px-4">
+                  <p className="text-gray-400 italic text-sm font-light leading-relaxed">
+                    <span className="text-amber-500/50 text-xl font-serif">"</span>
+                    {member.custom_status}
+                    <span className="text-amber-500/50 text-xl font-serif">"</span>
+                  </p>
+                </div>
               )}
               
               {/* Status Text */}
-              <div className="mb-6 flex justify-center">
+              <div className="mb-8 flex justify-center relative z-10">
                 <StatusIndicator 
                   userId={member.id} 
                   showText 
                   showCustomStatus
-                  className="bg-white/5 px-4 py-2 rounded-full border border-white/10"
+                  className="bg-white/5 px-6 py-2.5 rounded-full border border-white/10 shadow-inner text-xs font-bold"
                 />
               </div>
 
-              <p className="text-gray-500 font-mono text-xs opacity-50 uppercase tracking-widest mb-6">ID: {member.id}</p>
+              <p className="text-gray-600 font-mono text-[10px] opacity-40 uppercase tracking-[0.2em] mb-8">ID: {member.id}</p>
 
               {/* Flames Button */}
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-4 relative z-10">
                 <button
                   onClick={handleFlame}
                   disabled={!currentUser || currentUser.id === member.id}
-                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 group ${
+                  className={`flex items-center gap-4 px-8 py-4 rounded-2xl transition-all duration-500 group touch-manipulation shadow-xl ${
                     currentUser?.id === member.id 
-                      ? 'bg-white/5 text-gray-500 cursor-default' 
-                      : 'bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                      ? 'bg-white/5 text-gray-600 cursor-default border border-white/5' 
+                      : 'bg-amber-500 text-black font-black hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.5)]'
                   }`}
                 >
                   <div className="relative">
-                    <LucideFlame size={20} className={currentUser?.id !== member.id ? "group-hover:animate-bounce" : ""} />
+                    <LucideFlame size={22} className={currentUser?.id !== member.id ? "group-hover:animate-bounce" : ""} />
                     {currentUser?.id !== member.id && (
-                      <LucideSparkles size={12} className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+                      <LucideSparkles size={14} className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
                     )}
                   </div>
-                  <span className="font-bold">{member.flames_count || 0} Flammes</span>
+                  <span className="text-sm uppercase tracking-widest">{member.flames_count || 0} Flammes</span>
                 </button>
               </div>
             </div>
           </div>
 
           {/* Details / Activity Area */}
-          <div className="md:col-span-2 space-y-8">
+          <div className="lg:col-span-8 xl:col-span-8 space-y-6 md:gap-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 rounded-xl bg-violet-600/20 text-violet-400">
+              <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="p-3 rounded-2xl bg-violet-600/20 text-violet-400 group-hover:scale-110 transition-transform">
                     <LucideActivity className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold">Activité</h3>
+                  <h3 className="text-xl font-black uppercase tracking-widest">Activité</h3>
                 </div>
-                <p className="text-gray-400 text-sm leading-relaxed italic">
+                <p className="text-gray-400 text-sm leading-relaxed italic font-light">
                   "Apparu pour la première fois sous la Lanterne via le site."
                 </p>
               </div>
 
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 rounded-xl bg-amber-600/20 text-amber-500">
+              <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="p-3 rounded-2xl bg-amber-600/20 text-amber-500 group-hover:scale-110 transition-transform">
                     <LucideMessageCircle className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold">Badge Spécial</h3>
+                  <h3 className="text-xl font-black uppercase tracking-widest text-amber-500">Certifié</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500" title="Utilisateur certifié du site">
-                    <LucideCrown size={16} />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-black flex items-center justify-center shadow-lg" title="Utilisateur certifié du site">
+                    <LucideCrown size={20} />
                   </div>
-                  <span className="text-sm text-gray-400">Certifié Site</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Badge Site Officiel</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-10 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 backdrop-blur-md">
-              <h3 className="text-2xl font-serif font-bold mb-6">À propos de {member.username}</h3>
-              <p className="text-gray-400 leading-relaxed font-light text-lg italic">
+            <div className="p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-white/5 to-transparent border border-white/10 backdrop-blur-md shadow-2xl">
+              <h3 className="text-2xl md:text-3xl font-serif font-black mb-8 flex items-center gap-4">
+                À propos de {member.username}
+                <div className="h-px flex-1 bg-white/5" />
+              </h3>
+              <p className="text-gray-400 leading-relaxed font-light text-lg italic md:text-xl">
                 {member.bio || `Ce membre a rejoint la communauté de la Lanterne Nocturne. Vous pouvez le retrouver sur le serveur Discord pour discuter, jouer ou simplement passer du bon temps sous la même lueur.`}
               </p>
               
-              <div className="mt-10 pt-10 border-t border-white/5 flex flex-wrap gap-4">
+              <div className="mt-12 pt-10 border-t border-white/5 flex flex-wrap gap-4">
                 <a 
                   href={DISCORD_CONFIG.INVITE_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-8 py-3 bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all hover:scale-105 flex items-center gap-2"
+                  className="px-10 py-4 bg-white/5 border border-white/10 text-white font-black rounded-2xl hover:bg-white/10 transition-all hover:scale-105 flex items-center gap-3 uppercase tracking-widest text-xs touch-manipulation"
                 >
-                  <LucideUsers size={18} /> Discord
+                  <LucideUsers size={20} className="text-amber-500" /> Discord
                 </a>
                 
                 {currentUser && currentUser.id !== id && (
                   <div className="flex flex-wrap gap-4">
                     <button 
                       onClick={() => {
+                        setShowChatModal(true)
+                        setChatMessage(`Murmure de ${currentUser.username} : `)
+                      }}
+                      className="px-10 py-4 bg-amber-500 text-black font-black rounded-2xl hover:bg-amber-400 transition-all hover:scale-105 flex items-center gap-3 uppercase tracking-widest text-xs shadow-lg shadow-amber-500/20 touch-manipulation"
+                    >
+                      <LucideMessageSquare size={20} /> Murmurer
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowChatModal(true)}
+                      className="px-10 py-4 bg-violet-600 text-white font-black rounded-2xl hover:bg-violet-500 transition-all hover:scale-105 flex items-center gap-3 uppercase tracking-widest text-xs shadow-lg shadow-violet-600/20 touch-manipulation"
+                    >
+                      <LucideSend size={20} /> Message Privé
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
                         setShoutMessage(`@${member.username} `)
                         setShowShoutModal(true)
                       }}

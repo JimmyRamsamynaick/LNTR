@@ -24,8 +24,24 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-night-900 text-gray-100 overflow-x-hidden;
+    @apply bg-night-900 text-gray-100 overflow-x-hidden antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+
+  /* Pour éviter les rebonds bizarres sur mobile */
+  #root {
+    @apply min-h-screen flex flex-col;
+  }
+
+  button, a {
+    touch-action: manipulation;
   }
 
   /* Custom Immersive Scrollbar */

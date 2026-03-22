@@ -123,23 +123,28 @@ const Members: React.FC = () => {
           <p className="text-gray-500 font-light max-w-2xl mx-auto italic mb-12">"Chaque membre est une flamme qui illumine notre sanctuaire nocturne."</p>
 
           {/* Search and Filter Bar */}
-          <div className="flex flex-col md:flex-row gap-4 max-w-4xl mx-auto bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-xl">
-            <div className="relative flex-1">
-              <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+          <div className="flex flex-col lg:flex-row gap-4 max-w-5xl mx-auto bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="relative flex-1 group">
+              <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity rounded-xl pointer-events-none" />
+              <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 group-focus-within:text-amber-500 transition-colors" />
               <input 
                 type="text" 
                 placeholder="Rechercher un veilleur..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent border-none pl-12 pr-4 py-3 text-white placeholder:text-gray-600 focus:ring-0 outline-none"
+                className="w-full bg-transparent border-none pl-12 pr-4 py-4 text-white placeholder:text-gray-600 focus:ring-0 outline-none text-base"
               />
             </div>
             
-            <div className="h-px md:h-8 md:w-px bg-white/10 my-auto" />
+            <div className="hidden lg:block w-px h-8 bg-white/10 my-auto" />
+            <div className="lg:hidden h-px w-full bg-white/5 mx-auto" />
 
-            <div className="flex items-center gap-2 px-2">
-              <LucideFilter className="text-gray-500 w-4 h-4 mr-2" />
-              <div className="flex gap-1">
+            <div className="flex items-center gap-3 px-3 py-2 lg:py-0 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-2 text-gray-500 shrink-0">
+                <LucideFilter className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">Filtrer :</span>
+              </div>
+              <div className="flex gap-2 shrink-0">
                 {[
                   { label: 'Tous', value: 'all' },
                   { label: 'Éclat', value: 1, color: 'text-amber-500' },
@@ -149,10 +154,10 @@ const Members: React.FC = () => {
                   <button
                     key={btn.value}
                     onClick={() => setFilterTier(btn.value as any)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all shrink-0 active:scale-95 touch-manipulation ${
                       filterTier === btn.value 
-                        ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(255,170,0,0.3)]' 
-                        : 'text-gray-500 hover:bg-white/5'
+                        ? 'bg-amber-500 text-black shadow-[0_5px_20px_rgba(255,170,0,0.4)] scale-105 z-10' 
+                        : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300'
                     }`}
                   >
                     {btn.label}
@@ -163,7 +168,7 @@ const Members: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {loading && connectedMembers.length === 0 ? (
             // Squelette de chargement
             Array.from({ length: 8 }).map((_, i) => (

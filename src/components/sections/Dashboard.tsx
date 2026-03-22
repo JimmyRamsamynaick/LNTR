@@ -362,53 +362,58 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 px-4 sm:px-6 md:px-12 bg-night-900 text-white overflow-hidden relative">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-600/5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-900/5 blur-[150px] rounded-full pointer-events-none" />
+    <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 md:px-12 bg-night-900 text-white overflow-x-hidden selection:bg-amber-500/30">
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="mb-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <h1 className="text-4xl md:text-6xl font-serif font-black text-amber-500 mb-2 italic tracking-tighter">Tableau de Bord</h1>
+            <p className="text-gray-500 font-light italic">"L'obscurité est ton sanctuaire, la lumière est ta trace."</p>
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-xl w-full sm:w-auto overflow-hidden"
+          >
+            <div className="p-3 rounded-xl bg-amber-500/20 text-amber-500 hidden xs:flex">
+              <LucideActivity size={20} />
+            </div>
+            <div className="pr-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">Dernière visite</p>
+              <p className="text-sm font-black text-white">À l'instant</p>
+            </div>
+          </motion.div>
+        </div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-10"
-        >
-          {/* Profile Sidebar */}
-          <div className="lg:col-span-1 space-y-8">
-            <div className="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group">
-              {user.bannerUrl ? (
-                <img 
-                  src={user.bannerUrl} 
-                  className="absolute top-0 left-0 w-full h-24 z-0 object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-500" 
-                  alt="Banner"
-                />
-              ) : (
-                <div 
-                  className="absolute top-0 left-0 w-full h-24 z-0 opacity-20 group-hover:opacity-40 transition-opacity duration-500" 
-                  style={{ backgroundColor: user.bannerColor || 'transparent' }}
-                />
-              )}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-amber-600 z-10" />
-              <div className="flex flex-col items-center relative z-10">
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125 group-hover:scale-150 transition-transform duration-500" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+          {/* Sidebar Area */}
+          <div className="lg:col-span-1 space-y-6 md:space-y-10">
+            {/* Profile Info Card */}
+            <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group shadow-2xl">
+              <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-amber-500/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="relative mb-6 group-hover:scale-105 transition-transform duration-500">
+                  <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <img
                     src={user.avatar 
-                      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`
-                    }
+                      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256` 
+                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`}
                     alt={user.username}
-                    className="w-32 h-32 rounded-full border-4 border-amber-500/30 relative z-10 shadow-2xl"
+                    className="w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-night-900 relative z-10 shadow-2xl object-cover"
                   />
                   <StatusIndicator 
                     userId={user.id} 
                     size="lg"
-                    className="absolute bottom-1 right-1 z-20 scale-110" 
+                    className="absolute bottom-2 right-2 z-20 border-4 border-night-900" 
                     statusOverride={user.status as any}
                   />
                 </div>
+                
                 <h2 
-                  className={`text-3xl font-serif font-bold mb-1 tracking-tight ${isEternel ? 'nickname-golden-animated' : ''}`}
+                  className={`text-2xl md:text-3xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${isEternel ? 'nickname-golden-animated' : ''}`}
                   style={{ 
                     color: isEternel ? 'transparent' : (user.displayNameColor || '#FFFFFF'),
                     WebkitTextFillColor: isEternel ? 'transparent' : 'initial'
@@ -416,39 +421,42 @@ const Dashboard: React.FC = () => {
                 >
                   {user.username}
                 </h2>
-                {user.custom_status && (
-                  <p className="text-gray-500 italic text-sm mb-4">"{user.custom_status}"</p>
-                )}
-                <p className="text-gray-500 font-mono text-sm mb-4">ID: {user.id}</p>
                 
-                <div className="flex flex-wrap justify-center gap-2 mb-6">
+                {user.custom_status && (
+                  <p className="text-gray-500 italic text-sm mb-4 px-4 line-clamp-2">"{user.custom_status}"</p>
+                )}
+                
+                <p className="text-gray-600 font-mono text-[10px] opacity-40 uppercase tracking-[0.2em] mb-6">ID: {user.id}</p>
+                
+                <div className="flex flex-wrap justify-center gap-2 mb-8">
                   {userBadges.length > 0 ? (
                     userBadges.map((badge, idx) => (
-                      <div key={idx} className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(255,170,0,0.05)]`}>
-                        <badge.icon size={12} />
+                      <div key={idx} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[9px] font-black uppercase tracking-widest shadow-lg`}>
+                        <badge.icon size={10} />
                         {badge.label}
                       </div>
                     ))
                   ) : (
-                    <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/5 border border-white/10 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
-                      <LucideUsers size={12} />
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-500 text-[9px] font-black uppercase tracking-widest">
+                      <LucideUsers size={10} />
                       Membre
                     </div>
                   )}
                 </div>
 
-                <div className="w-full h-px bg-white/10 mb-8" />
-                <div className="w-full space-y-4">
-                  <Link to="/settings" className="w-full flex items-center gap-4 px-6 py-4 rounded-xl hover:bg-white/5 transition-colors group">
-                    <LucideSettings className="w-5 h-5 text-gray-500 group-hover:text-amber-500" />
-                    <span className="font-medium group-hover:text-amber-500 transition-colors">Paramètres profil</span>
+                <div className="w-full h-px bg-white/5 mb-8" />
+                
+                <div className="w-full grid grid-cols-2 gap-3">
+                  <Link to="/settings" className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-amber-500/30 transition-all group touch-manipulation">
+                    <LucideSettings className="w-5 h-5 text-gray-500 group-hover:text-amber-500 group-hover:rotate-90 transition-all duration-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-amber-500 transition-colors">Paramètres</span>
                   </Link>
                   <button
                     onClick={logout}
-                    className="w-full flex items-center gap-4 px-6 py-4 rounded-xl hover:bg-red-500/10 text-red-400 transition-colors group"
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/30 transition-all group touch-manipulation"
                   >
-                    <LucideLogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    <span className="font-medium">Déconnexion</span>
+                    <LucideLogOut className="w-5 h-5 text-red-500/50 group-hover:translate-x-1 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-red-500/50">Déconnexion</span>
                   </button>
                 </div>
               </div>
@@ -456,39 +464,40 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div className="lg:col-span-2 space-y-6 md:space-y-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
 
-              <div className={`p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md relative ${showStatusMenu ? 'z-50' : 'z-10'}`}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 rounded-xl bg-violet-600/20 text-violet-400">
+              <div className={`p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-500 backdrop-blur-md relative shadow-xl ${showStatusMenu ? 'z-50' : 'z-10'}`}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 rounded-2xl bg-violet-600/20 text-violet-400">
                     <LucideActivity className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold">Activité Discord</h3>
+                  <h3 className="text-xl font-black uppercase tracking-widest">Activité Discord</h3>
                 </div>
-                <p className="text-gray-400">Gérez votre statut interne.</p>
-                <div className="mt-6 relative">
+                <p className="text-gray-500 text-sm italic font-light mb-6">"Gérez votre statut interne sur la plateforme."</p>
+                
+                <div className="relative">
                    <button 
                     onClick={() => setShowStatusMenu(!showStatusMenu)}
-                    className="w-full bg-white/5 px-4 py-3 rounded-xl border border-white/10 flex items-center justify-between group hover:border-amber-500/30 transition-all"
+                    className="w-full bg-white/5 px-5 py-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:border-amber-500/40 transition-all touch-manipulation shadow-inner"
                    >
                      <StatusIndicator 
                        userId={user.id} 
                        showText 
                        statusOverride={user.status as any}
                      />
-                     <div className="text-gray-500 group-hover:text-amber-500 transition-colors">
-                        <LucideSettings size={16} />
+                     <div className="text-gray-500 group-hover:text-amber-500 transition-colors group-hover:rotate-180 duration-500">
+                        <LucideSettings size={18} />
                      </div>
                    </button>
 
                    <AnimatePresence>
                      {showStatusMenu && (
                        <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full left-0 w-full mt-2 p-2 bg-night-800 border border-white/10 rounded-2xl shadow-2xl z-[100] space-y-1"
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full left-0 w-full mt-3 p-3 bg-night-800 border border-white/10 rounded-[2rem] shadow-2xl z-[100] space-y-2 backdrop-blur-3xl"
                        >
                          {statusOptions.map((opt) => (
                            <button
@@ -497,9 +506,9 @@ const Dashboard: React.FC = () => {
                               updateStatus(opt.id as any)
                               setShowStatusMenu(false)
                             }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-sm ${user.status === opt.id ? 'bg-white/5 text-amber-500' : 'text-gray-400'}`}
+                            className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all text-sm font-bold touch-manipulation ${user.status === opt.id ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-lg shadow-amber-500/5' : 'text-gray-400 hover:bg-white/5'}`}
                            >
-                             <div className={`w-3 h-3 rounded-full ${opt.color}`} />
+                             <div className={`w-3.5 h-3.5 rounded-full ${opt.color} shadow-lg shadow-current/20`} />
                              {opt.label}
                            </button>
                          ))}
@@ -509,34 +518,45 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md relative z-10">
-                <div className="flex items-center justify-between mb-4">
+              <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-500 backdrop-blur-md relative z-10 shadow-xl overflow-hidden group">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-amber-600/20 text-amber-500">
+                    <div className="p-3 rounded-2xl bg-amber-600/20 text-amber-500 group-hover:scale-110 transition-transform">
                       <LucideBell className="w-6 h-6" />
                     </div>
-                    <h3 className="text-xl font-bold">Notifications</h3>
+                    <h3 className="text-xl font-black uppercase tracking-widest">Alertes</h3>
                   </div>
                   {notifications.some(n => !n.read) && (
                     <button 
                       onClick={markAsRead}
-                      className="text-[10px] uppercase tracking-widest text-amber-500 hover:text-amber-400 font-bold"
+                      className="text-[10px] uppercase tracking-widest text-amber-500 hover:text-amber-400 font-black transition-colors"
                     >
                       Tout lire
                     </button>
                   )}
                 </div>
-                <div className="space-y-4 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                
+                <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 scrollbar-hide">
                   {notifications.length === 0 ? (
-                    <p className="text-gray-600 text-sm italic">Aucune notification.</p>
+                    <div className="flex flex-col items-center justify-center py-6 opacity-30 italic">
+                      <LucideBell size={32} className="mb-2" />
+                      <p className="text-xs">Aucune notification.</p>
+                    </div>
                   ) : (
                     notifications.map((n) => (
-                      <div key={n.id} className={`p-3 rounded-xl border ${n.read ? 'bg-white/5 border-white/5 opacity-50' : 'bg-amber-500/10 border-amber-500/20'} transition-all`}>
-                        <p className="text-xs text-gray-300">
-                          <span className="font-bold text-amber-500">{n.from_username}</span> 
-                          {n.type === 'comment' ? ' a laissé un commentaire sur ton profil.' : ' t\'a envoyé un message privé.'}
-                        </p>
-                        <span className="text-[10px] text-gray-600 mt-1 block">{new Date(n.created_at).toLocaleTimeString()}</span>
+                      <div key={n.id} className={`p-4 rounded-2xl border transition-all hover:translate-x-1 ${n.read ? 'bg-white/5 border-white/5 opacity-40 grayscale' : 'bg-amber-500/10 border-amber-500/20 shadow-lg shadow-amber-500/5'} group/notif`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-gray-600' : 'bg-amber-500 animate-pulse'}`} />
+                          <div>
+                            <p className="text-xs text-gray-300 leading-relaxed">
+                              <span className="font-black text-white uppercase tracking-tighter mr-1">{n.from_username}</span> 
+                              <span className="font-light opacity-80 italic">
+                                {n.type === 'comment' ? 'a laissé un commentaire sur ton profil.' : 't\'a envoyé un message privé.'}
+                              </span>
+                            </p>
+                            <span className="text-[9px] text-gray-600 mt-2 block font-black uppercase tracking-widest italic">{new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
                       </div>
                     ))
                   )}

@@ -145,32 +145,54 @@ const Header: React.FC = () => {
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-full left-0 w-full bg-night-800 border-b border-white/5 p-6 flex flex-col gap-6 md:hidden backdrop-blur-2xl"
-        >
-          {navLinks.map((link) => (
-            <Link 
-              key={link.name} 
-              to={link.path} 
-              className="text-lg text-gray-300 hover:text-amber-500 font-medium"
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            {/* Background Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] md:hidden"
+            />
+            
+            <motion.div 
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute top-full left-0 w-full bg-night-800 border-b border-white/5 p-6 flex flex-col gap-6 md:hidden backdrop-blur-2xl z-50 shadow-2xl origin-top"
             >
-              {link.name}
-            </Link>
-          ))}
-          {user && (
-            <button
-              onClick={() => { logout(); setIsMenuOpen(false); }}
-              className="flex items-center gap-3 text-red-400 font-medium pt-4 border-t border-white/5"
-            >
-              <LucideLogOut size={20} /> Déconnexion
-            </button>
-          )}
-        </motion.div>
-      )}
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.name} 
+                  to={link.path} 
+                  className="text-xl text-gray-300 hover:text-amber-500 font-medium py-2 transition-colors flex items-center justify-between group"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.name}
+                  <motion.span 
+                    initial={{ x: -10, opacity: 0 }}
+                    whileHover={{ x: 0, opacity: 1 }}
+                    className="text-amber-500"
+                  >
+                    →
+                  </motion.span>
+                </Link>
+              ))}
+              {user && (
+                <button
+                  onClick={() => { logout(); setIsMenuOpen(false); }}
+                  className="flex items-center gap-3 text-red-400 font-medium pt-6 border-t border-white/5 mt-2 text-xl"
+                >
+                  <LucideLogOut size={24} /> Déconnexion
+                </button>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Real-time Toast Notification */}
       <AnimatePresence>
