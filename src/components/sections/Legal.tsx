@@ -29,23 +29,15 @@ const LegalSection: React.FC<LegalSectionProps> = ({ title, icon: Icon, children
 
 const Legal: React.FC = () => {
   return (
-    <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 md:px-12 bg-night-900">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 md:px-12 bg-night-900 relative">
+      <div className="max-w-4xl mx-auto relative z-10">
         <div className="text-center mb-20">
-          <motion.h1 
-            initial={{ opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-serif font-bold mb-6 text-amber-500"
-          >
+          <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-amber-500">
             Informations Légales
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xl text-gray-400 max-w-2xl mx-auto italic"
-          >
+          </h1>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto italic">
             "La clarté sous la lanterne : nos engagements et vos droits."
-          </motion.p>
+          </p>
         </div>
 
         {/* CGU */}
