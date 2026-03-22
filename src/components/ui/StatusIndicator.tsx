@@ -39,7 +39,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   statusOverride
 }) => {
   const [status, setStatus] = useState<DiscordStatus>(statusOverride || 'offline')
-  const [customStatus] = useState<string | null>(null)
+  const [customStatus, setCustomStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(!statusOverride)
 
   useEffect(() => {
@@ -54,13 +54,14 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
       try {
         const { data, error } = await supabase
           .from('members')
-          .select('status, last_seen')
+          .select('status, last_seen, custom_status')
           .eq('id', userId)
           .single()
 
         if (error) throw error
 
         if (data) {
+          setCustomStatus(data.custom_status)
           // If status is 'offline', user explicitly chose to be invisible
           if (data.status === 'offline') {
             setStatus('offline')

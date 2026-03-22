@@ -11,11 +11,14 @@ export interface DiscordUser {
   avatar: string
   roles: string[]
   status?: string
+  custom_status?: string
   bio?: string
   bannerColor?: string
   bannerUrl?: string
   displayNameColor?: string
   premium_tier?: number // 0: none, 1: Eclat, 2: Lanterne, 3: Eternel
+  incognito_mode?: boolean
+  flames_count?: number
 }
 
 interface AuthContextType {
@@ -49,11 +52,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const updatedUser: DiscordUser = {
           ...user,
           status: memberData.status || user.status,
+          custom_status: memberData.custom_status || user.custom_status,
           bio: memberData.bio || user.bio,
           bannerColor: memberData.banner_color || user.bannerColor,
           bannerUrl: memberData.banner_url || user.bannerUrl,
           displayNameColor: memberData.display_name_color || user.displayNameColor,
-          premium_tier: memberData.premium_tier || 0
+          premium_tier: memberData.premium_tier || 0,
+          incognito_mode: memberData.incognito_mode || false,
+          flames_count: memberData.flames_count || 0
         }
         setUser(updatedUser)
         localStorage.setItem('discord_user', JSON.stringify(updatedUser))
@@ -138,11 +144,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: updatedUser.avatar || null,
           roles: updatedUser.roles || [],
           status: updatedUser.status || 'online',
+          custom_status: updatedUser.custom_status || '',
           bio: updatedUser.bio || '',
           banner_color: updatedUser.bannerColor || '#1a1a1a',
           banner_url: updatedUser.bannerUrl || null,
           display_name_color: updatedUser.displayNameColor || '#FFFFFF',
           premium_tier: updatedUser.premium_tier || 0,
+          incognito_mode: updatedUser.incognito_mode || false,
           last_seen: new Date().toISOString()
         })
       if (error) {

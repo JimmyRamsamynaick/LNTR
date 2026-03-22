@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { LucideMoon, LucideFlame, LucideCigarette, LucideTheater } from 'lucide-react'
+import { LucideMoon, LucideFlame, LucideSettings, LucideTheater } from 'lucide-react'
 
 const features = [
   {
@@ -16,7 +16,7 @@ const features = [
     color: "from-amber-500/20 to-transparent"
   },
   {
-    icon: LucideCigarette,
+    icon: LucideSettings,
     title: "Expérience personnalisée",
     description: "Rôles, salons et interactions sur mesure pour chaque membre de la lanterne.",
     color: "from-blue-500/20 to-transparent"

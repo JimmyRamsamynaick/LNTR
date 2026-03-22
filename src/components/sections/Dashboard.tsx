@@ -1,9 +1,10 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles } from 'lucide-react'
+import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX } from 'lucide-react'
 import { Navigate, Link } from 'react-router-dom'
 import StatusIndicator from '../ui/StatusIndicator'
+import Shoutbox from '../ui/Shoutbox'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { supabase } from '../../lib/supabase'
 
@@ -27,6 +28,9 @@ const Dashboard: React.FC = () => {
   const [newMsg, setNewMsg] = React.useState('')
   const [showStatusMenu, setShowStatusMenu] = React.useState(false)
   const [recentVisitors, setRecentVisitors] = React.useState<any[]>([])
+  const [profileComments, setProfileComments] = React.useState<any[]>([])
+  const [replyingToComment, setReplyingToComment] = React.useState<string | null>(null)
+  const [replyContent, setReplyContent] = React.useState('')
 
   const fetchData = React.useCallback(async () => {
     if (!user) return
@@ -41,6 +45,25 @@ const Dashboard: React.FC = () => {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     if (notifs) setNotifications(notifs)
+
+    // 1.5 Fetch Profile Comments
+    const { data: comments } = await supabase
+      .from('profile_comments')
+      .select('*')
+      .eq('profile_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (comments) {
+      // For each comment, check if there's a reply from me (the profile owner)
+      const parents = comments.filter(c => !c.parent_id)
+      const replies = comments.filter(c => c.parent_id)
+      
+      const mappedComments = parents.map(p => ({
+        ...p,
+        replies: replies.filter(r => r.parent_id === p.id)
+      }))
+      setProfileComments(mappedComments)
+    }
 
     // 2. Fetch Recent Visitors (Tier 3 only)
     const isEternel = user?.roles?.some(roleId => [
@@ -253,6 +276,32 @@ const Dashboard: React.FC = () => {
     }
   }
 
+  const handleReplyComment = async (commentId: string) => {
+    if (!user || !replyContent.trim()) return
+
+    try {
+      const { error } = await supabase
+        .from('profile_comments')
+        .insert({
+          profile_id: user.id,
+          user_id: user.id,
+          username: user.username,
+          avatar: user.avatar,
+          content: replyContent,
+          parent_id: commentId
+        })
+
+      if (error) throw error
+
+      setReplyContent('')
+      setReplyingToComment(null)
+      fetchData() // Refresh comments
+    } catch (e) {
+      console.error('Failed to reply to comment:', e)
+      alert('Erreur lors de la réponse au commentaire.')
+    }
+  }
+
   const isStaff = user?.roles?.some(roleId => [
     DISCORD_CONFIG.ROLES.OWNER,
     DISCORD_CONFIG.ROLES.CO_OWNER,
@@ -313,7 +362,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 px-6 md:px-12 bg-night-900 text-white overflow-hidden relative">
+    <div className="min-h-screen pt-24 px-4 sm:px-6 md:px-12 bg-night-900 text-white overflow-hidden relative">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-600/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-900/5 blur-[150px] rounded-full pointer-events-none" />
@@ -367,6 +416,9 @@ const Dashboard: React.FC = () => {
                 >
                   {user.username}
                 </h2>
+                {user.custom_status && (
+                  <p className="text-gray-500 italic text-sm mb-4">"{user.custom_status}"</p>
+                )}
                 <p className="text-gray-500 font-mono text-sm mb-4">ID: {user.id}</p>
                 
                 <div className="flex flex-wrap justify-center gap-2 mb-6">
@@ -406,6 +458,7 @@ const Dashboard: React.FC = () => {
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+
               <div className={`p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md relative ${showStatusMenu ? 'z-50' : 'z-10'}`}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-xl bg-violet-600/20 text-violet-400">
@@ -638,6 +691,113 @@ const Dashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Profile Comments Management - NEW POSITION (ABOVE SHOUTBOX) */}
+            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md relative z-10">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 rounded-xl bg-amber-600/20 text-amber-500">
+                  <LucideMessageCircle className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold">Derniers commentaires sur ton profil</h3>
+              </div>
+              
+              <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {profileComments.length === 0 ? (
+                  <p className="text-gray-600 text-sm italic py-4">Aucun commentaire sur ton profil pour le moment.</p>
+                ) : (
+                  profileComments.map((comment) => (
+                    <div key={comment.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex gap-3">
+                          <img
+                            src={comment.avatar 
+                              ? `https://cdn.discordapp.com/avatars/${comment.user_id}/${comment.avatar}.png?size=64`
+                              : `https://cdn.discordapp.com/embed/avatars/${parseInt(comment.user_id) % 5}.png`
+                            }
+                            alt={comment.username}
+                            className="w-10 h-10 rounded-full border border-white/10"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm text-white">{comment.username}</span>
+                              <span className="text-[10px] text-gray-600">{new Date(comment.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-sm text-gray-300 italic">"{comment.content}"</p>
+                          </div>
+                        </div>
+                        
+                        {comment.replies?.length === 0 && (
+                          <button
+                            onClick={() => setReplyingToComment(replyingToComment === comment.id ? null : comment.id)}
+                            className="p-2 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-black transition-all"
+                            title="Répondre"
+                          >
+                            <LucideReply size={16} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Existing Replies */}
+                      {comment.replies?.map((reply: any) => (
+                        <div key={reply.id} className="ml-12 p-3 rounded-xl bg-amber-500/5 border-l-2 border-amber-500 flex gap-3">
+                          <div className="p-1 rounded-full bg-amber-500 text-black">
+                            <LucideReply size={10} className="transform scale-x-[-1]" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Ta réponse</p>
+                            <p className="text-sm text-gray-300 italic">"{reply.content}"</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Reply Input Area */}
+                      <AnimatePresence>
+                        {replyingToComment === comment.id && (
+                          <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="ml-12 space-y-3"
+                          >
+                            <div className="relative">
+                              <textarea
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                placeholder="Écris ta réponse..."
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all resize-none min-h-[80px]"
+                              />
+                              <div className="absolute bottom-2 right-2 flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setReplyingToComment(null)
+                                    setReplyContent('')
+                                  }}
+                                  className="p-2 text-gray-500 hover:text-white transition-colors"
+                                >
+                                  <LucideX size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleReplyComment(comment.id)}
+                                  disabled={!replyContent.trim()}
+                                  className="p-2 bg-amber-600 text-black rounded-lg hover:bg-amber-500 transition-all disabled:opacity-50"
+                                >
+                                  <LucideSend size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Shoutbox - NEW POSITION */}
+            <div className="h-[400px] w-full">
+              <Shoutbox />
             </div>
 
             <div className="p-10 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 backdrop-blur-md relative overflow-hidden">

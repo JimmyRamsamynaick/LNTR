@@ -73,6 +73,9 @@ const UserProfile: React.FC = () => {
     // Record profile view
     const recordView = async () => {
       if (currentUser && id && currentUser.id !== id) {
+        // Check if current user is incognito
+        if (currentUser.incognito_mode) return
+
         try {
           await supabase
             .from('profile_views')
@@ -303,8 +306,21 @@ const UserProfile: React.FC = () => {
   ].includes(roleId))
   const isEternel = isStaff || (member.premium_tier || 0) >= 3
 
+  const handleFlame = async () => {
+    if (!currentUser || currentUser.id === member.id) return
+    
+    try {
+      const { error } = await supabase.rpc('increment_flames', { member_id: member.id })
+      if (error) throw error
+      
+      setMember(prev => prev ? { ...prev, flames_count: (prev.flames_count || 0) + 1 } : null)
+    } catch (e) {
+      console.error('Failed to light flame:', e)
+    }
+  }
+
   return (
-    <div className="min-h-screen pt-32 px-6 md:px-12 bg-night-900 text-white overflow-hidden relative">
+    <div className="min-h-screen pt-32 px-4 sm:px-6 md:px-12 bg-night-900 text-white overflow-hidden relative">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-600/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-900/5 blur-[150px] rounded-full pointer-events-none" />
@@ -361,7 +377,7 @@ const UserProfile: React.FC = () => {
               </div>
 
               <h2 
-                className={`text-3xl font-serif font-bold mb-4 tracking-tight truncate relative z-10 ${isEternel ? 'nickname-golden-animated' : ''}`} 
+                className={`text-3xl font-serif font-bold mb-1 tracking-tight truncate relative z-10 ${isEternel ? 'nickname-golden-animated' : ''}`} 
                 style={{ 
                   color: isEternel ? 'transparent' : (member.displayNameColor || '#FFFFFF'),
                   WebkitTextFillColor: isEternel ? 'transparent' : 'initial'
@@ -369,6 +385,9 @@ const UserProfile: React.FC = () => {
               >
                 {member.username}
               </h2>
+              {member.custom_status && (
+                <p className="text-gray-500 italic text-sm mb-4 relative z-10">"{member.custom_status}"</p>
+              )}
               
               <div className="flex flex-wrap justify-center gap-2 mb-8 relative z-10">
                 {userBadges.length > 0 ? (
@@ -396,7 +415,28 @@ const UserProfile: React.FC = () => {
                 />
               </div>
 
-              <p className="text-gray-500 font-mono text-xs opacity-50 uppercase tracking-widest">ID: {member.id}</p>
+              <p className="text-gray-500 font-mono text-xs opacity-50 uppercase tracking-widest mb-6">ID: {member.id}</p>
+
+              {/* Flames Button */}
+              <div className="flex justify-center mb-4">
+                <button
+                  onClick={handleFlame}
+                  disabled={!currentUser || currentUser.id === member.id}
+                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 group ${
+                    currentUser?.id === member.id 
+                      ? 'bg-white/5 text-gray-500 cursor-default' 
+                      : 'bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                  }`}
+                >
+                  <div className="relative">
+                    <LucideFlame size={20} className={currentUser?.id !== member.id ? "group-hover:animate-bounce" : ""} />
+                    {currentUser?.id !== member.id && (
+                      <LucideSparkles size={12} className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+                    )}
+                  </div>
+                  <span className="font-bold">{member.flames_count || 0} Flammes</span>
+                </button>
+              </div>
             </div>
           </div>
 

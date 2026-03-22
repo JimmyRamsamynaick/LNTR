@@ -70,7 +70,7 @@ const Shop: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen pt-32 pb-20 px-6 md:px-12 bg-night-900 text-white relative overflow-hidden">
+    <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 md:px-12 bg-night-900 text-white relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-600/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-violet-900/5 blur-[150px] rounded-full pointer-events-none" />
@@ -165,56 +165,56 @@ const Shop: React.FC = () => {
       {/* Success Modal */}
       <AnimatePresence>
         {showSuccess && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/90 backdrop-blur-xl">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-2xl bg-night-800 border border-white/10 rounded-[3rem] p-10 md:p-16 relative text-center shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+              className="w-full max-w-xl bg-night-800 border border-white/10 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 relative text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-y-auto max-h-[95vh]"
             >
               <button 
                 onClick={() => setShowSuccess(false)}
-                className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors"
+                className="absolute top-4 right-4 md:top-8 md:right-8 text-gray-500 hover:text-white transition-colors p-2"
               >
-                <LucideX size={28} />
+                <LucideX size={24} />
               </button>
 
-              <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
-                <LucidePartyPopper size={48} />
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 animate-pulse">
+                <LucidePartyPopper size={32} className="md:w-10 md:h-10" />
               </div>
 
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Merci pour votre soutien !</h2>
-              <p className="text-xl text-amber-500 font-bold mb-8 uppercase tracking-widest">Activation du {selectedPack?.name || 'Pack'}</p>
+              <h2 className="text-2xl md:text-4xl font-serif font-bold text-white mb-4 md:mb-6">Merci pour votre soutien !</h2>
+              <p className="text-sm md:text-lg text-amber-500 font-bold mb-6 md:mb-8 uppercase tracking-widest">Activation du {selectedPack?.name || 'Pack'}</p>
               
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-10 text-left">
-                <h3 className="text-lg font-bold flex items-center gap-3 text-white mb-6">
-                  <LucideFlame size={20} className="text-amber-500" />
+              <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-8 mb-6 md:mb-10 text-left">
+                <h3 className="text-sm md:text-lg font-bold flex items-center gap-3 text-white mb-4 md:mb-6">
+                  <LucideFlame size={18} className="text-amber-500 md:w-5 md:h-5" />
                   Choisissez votre moyen de paiement :
                 </h3>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
                   {paymentLinks.map((link) => (
                     <a
                       key={link.name}
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex items-center justify-center gap-3 p-4 rounded-2xl ${link.color} text-white font-bold hover:scale-105 transition-all shadow-lg`}
+                      className={`flex items-center justify-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl ${link.color} text-white text-sm md:text-base font-bold hover:scale-105 transition-all shadow-lg`}
                     >
-                      <link.icon size={20} />
+                      <link.icon size={18} className="md:w-5 md:h-5" />
                       Payer via {link.name}
                     </a>
                   ))}
                 </div>
 
-                <div className="space-y-4 text-gray-400 text-sm border-t border-white/10 pt-6">
-                  <p className="font-bold text-white mb-2">Après le paiement :</p>
-                  <li className="flex gap-4">
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-black text-[10px] font-bold shrink-0">1</span>
+                <div className="space-y-3 md:space-y-4 text-gray-400 text-[10px] md:text-xs border-t border-white/10 pt-4 md:pt-6">
+                  <p className="font-bold text-white mb-1 md:mb-2 text-xs md:text-sm">Après le paiement :</p>
+                  <li className="flex gap-3 md:gap-4">
+                    <span className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-amber-500 text-black text-[8px] md:text-[10px] font-bold shrink-0">1</span>
                     <p>Vous recevez votre grade sur le serveur Discord.</p>
                   </li>
-                  <li className="flex gap-4">
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-black text-[10px] font-bold shrink-0">2</span>
+                  <li className="flex gap-3 md:gap-4">
+                    <span className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-amber-500 text-black text-[8px] md:text-[10px] font-bold shrink-0">2</span>
                     <p>Reconnectez-vous au site pour activer vos avantages.</p>
                   </li>
                 </div>
@@ -222,7 +222,7 @@ const Shop: React.FC = () => {
 
               <button 
                 onClick={() => setShowSuccess(false)}
-                className="px-12 py-4 bg-white/5 text-gray-400 font-bold rounded-full hover:bg-white/10 transition-all"
+                className="w-full md:w-auto px-10 py-3 md:py-4 bg-white/5 text-gray-400 text-sm font-bold rounded-full hover:bg-white/10 transition-all"
               >
                 Fermer la fenêtre
               </button>

@@ -29,7 +29,7 @@ const LegalSection: React.FC<LegalSectionProps> = ({ title, icon: Icon, children
 
 const Legal: React.FC = () => {
   return (
-    <div className="min-h-screen pt-32 pb-20 px-6 md:px-12 bg-night-900">
+    <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 md:px-12 bg-night-900">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-20">
           <motion.h1 
@@ -82,9 +82,9 @@ const Legal: React.FC = () => {
           <h3 className="text-white font-bold text-xl mt-8">Éditeur du site</h3>
           <p>Le site La Lanterne Nocturne est édité par l'équipe d'administration de la communauté.</p>
           <h3 className="text-white font-bold text-xl mt-8">Hébergement</h3>
-          <p>Ce site est hébergé par [VOTRE HEBERGEUR] - Adresse de l'hébergeur.</p>
+          <p>Ce site est hébergé par <strong>Contabo GmbH</strong> - Aschauer Straße 32a, 81549 Munich, Allemagne.</p>
           <h3 className="text-white font-bold text-xl mt-8">Contact</h3>
-          <p>Pour toute question, vous pouvez nous contacter via notre serveur Discord officiel ou à l'adresse email : contact@lalanternenocturne.fr</p>
+          <p>Pour toute question, vous pouvez nous contacter via notre serveur Discord officiel ou à l'adresse email : <strong>jimmybcorpo@gmail.com</strong></p>
         </LegalSection>
 
         <div className="text-center text-gray-600 text-sm mt-20">

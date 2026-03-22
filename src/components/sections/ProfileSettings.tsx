@@ -13,6 +13,8 @@ const ProfileSettings: React.FC = () => {
   const [bannerColor, setBannerColor] = useState('#1a1a1a')
   const [bannerUrl, setBannerUrl] = useState('')
   const [displayNameColor, setDisplayNameColor] = useState('#FFFFFF')
+  const [customStatus, setCustomStatus] = useState('')
+  const [incognitoMode, setIncognitoMode] = useState(false)
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
 
@@ -75,6 +77,8 @@ const ProfileSettings: React.FC = () => {
       setBannerColor(user.bannerColor || '#1a1a1a')
       setBannerUrl(user.bannerUrl || '')
       setDisplayNameColor(user.displayNameColor || '#FFFFFF')
+      setCustomStatus(user.custom_status || '')
+      setIncognitoMode(user.incognito_mode || false)
     }
   }, [user])
 
@@ -107,7 +111,9 @@ const ProfileSettings: React.FC = () => {
         bio,
         bannerColor: hasPackLanterne ? bannerColor : '#1a1a1a',
         bannerUrl: hasPackLanterne ? bannerUrl : '',
-        displayNameColor: hasPackEclat ? displayNameColor : '#FFFFFF'
+        displayNameColor: hasPackEclat ? displayNameColor : '#FFFFFF',
+        custom_status: hasPackEclat ? customStatus : '',
+        incognito_mode: hasPackEternel ? incognitoMode : false
       })
       setSaved(true)
       setTimeout(() => {
@@ -361,10 +367,60 @@ const ProfileSettings: React.FC = () => {
                       onChange={(e) => hasPackEclat && setDisplayNameColor(e.target.value.startsWith('#') ? e.target.value : `#${e.target.value}`)}
                       disabled={!hasPackEclat}
                       placeholder="#FFFFFF"
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-mono focus:border-amber-500/50 outline-none transition-colors"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-mono focus:border-amber-500/50 outline-none transition-all"
                     />
                   </div>
                   {!hasPackEclat && <p className="text-[10px] text-amber-500/60 mt-2 font-bold uppercase">Requis: Pack Éclat</p>}
+                </div>
+
+                {/* Custom Status - Pack Eclat (Tier 1) */}
+                <div className={`relative ${!hasPackEclat && 'opacity-40'}`}>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-2">
+                    Phrase de Statut
+                    {!hasPackEclat && <LucideCrown size={10} className="text-amber-500" />}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={customStatus}
+                    onChange={(e) => hasPackEclat && setCustomStatus(e.target.value)}
+                    disabled={!hasPackEclat}
+                    placeholder="Quoi de neuf ?"
+                    maxLength={100}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500/50 outline-none transition-all"
+                  />
+                  {!hasPackEclat && <p className="text-[10px] text-amber-500/60 mt-2 font-bold uppercase">Requis: Pack Éclat</p>}
+                </div>
+
+                {/* Incognito Mode - Pack Eternel (Tier 3) */}
+                <div className={`relative ${!hasPackEternel && 'opacity-40'} col-span-1 md:col-span-2 bg-amber-500/5 p-6 rounded-2xl border border-amber-500/10`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl ${hasPackEternel ? 'bg-amber-500/20 text-amber-500' : 'bg-white/5 text-gray-500'}`}>
+                        <LucideShield size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white flex items-center gap-2">
+                          Mode Incognito
+                          {!hasPackEternel && <LucideCrown size={12} className="text-amber-500" />}
+                        </h4>
+                        <p className="text-xs text-gray-500">Visitez les profils des autres membres sans laisser de trace.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => hasPackEternel && setIncognitoMode(!incognitoMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                        incognitoMode ? 'bg-amber-500' : 'bg-white/10'
+                      } ${!hasPackEternel ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          incognitoMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  {!hasPackEternel && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Requis: Pack Éternel</p>}
                 </div>
               </div>
             </div>
