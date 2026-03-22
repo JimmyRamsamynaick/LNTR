@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { LucideSend, LucideMessageSquare, LucideFlame, LucideSparkles, LucideCrown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../AuthContext'
@@ -24,7 +24,7 @@ const Shoutbox: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const fetchShouts = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('shoutbox')
       .select('*')
       .order('created_at', { ascending: false })
