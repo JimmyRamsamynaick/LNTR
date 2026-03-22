@@ -152,6 +152,9 @@ const UserProfile: React.FC = () => {
   const handleAddComment = async () => {
     if (!currentUser || !newComment.trim()) return
 
+    const commentContent = newComment.trim()
+    setNewComment('')
+
     try {
       const { error } = await supabase
         .from('profile_comments')
@@ -160,7 +163,7 @@ const UserProfile: React.FC = () => {
           user_id: currentUser.id,
           username: currentUser.username,
           avatar: currentUser.avatar,
-          content: newComment
+          content: commentContent
         })
 
       if (error) throw error
@@ -173,14 +176,12 @@ const UserProfile: React.FC = () => {
             user_id: id,
             from_username: currentUser.username,
             type: 'comment',
-            content: newComment.substring(0, 50) + (newComment.length > 50 ? '...' : '')
+            content: commentContent.substring(0, 50) + (commentContent.length > 50 ? '...' : '')
           })
       }
-
-      setNewComment('')
-      // fetchComments sera appelé par le realtime
     } catch (e) {
       console.error('Failed to add comment:', e)
+      setNewComment(commentContent) // Restore content on error
       alert('Erreur lors de l\'ajout du commentaire.')
     }
   }
@@ -706,7 +707,7 @@ const UserProfile: React.FC = () => {
                                 <LucideReply size={14} /> Répondre
                               </button>
                             )}
-                            {(currentUser?.id === comment.userId || currentUser?.id === id) && (
+                            {(currentUser?.id === comment.userId || currentUser?.id === id || isStaff) && (
                               <button 
                                 onClick={() => handleDeleteComment(comment.id)}
                                 className="text-xs text-red-500/50 hover:text-red-500 flex items-center gap-1 transition-colors opacity-0 group-hover:opacity-100"
