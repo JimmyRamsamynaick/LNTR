@@ -62,7 +62,8 @@ const UserProfile: React.FC = () => {
             bannerColor: data.banner_color,
             displayNameColor: data.display_name_color,
             premium_tier: data.premium_tier,
-            bannerUrl: data.banner_url
+            bannerUrl: data.banner_url,
+            flames_count: data.flames_count || 0
           })
         }
       } catch (e) {

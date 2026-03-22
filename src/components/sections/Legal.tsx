@@ -35,13 +35,19 @@ const Legal: React.FC = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
             className="text-5xl md:text-7xl font-serif font-bold mb-6 text-amber-500"
           >
             Informations Légales
           </motion.h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto italic">
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl text-gray-400 max-w-2xl mx-auto italic"
+          >
             "La clarté sous la lanterne : nos engagements et vos droits."
-          </p>
+          </motion.p>
         </div>
 
         {/* CGU */}
