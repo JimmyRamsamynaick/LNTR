@@ -83,6 +83,10 @@ create table if not exists public.private_messages (
 
 -- 3. FONCTIONS DE SÉCURITÉ ET UTILITAIRES
 
+-- On supprime d'abord si elles existent pour éviter les erreurs
+drop function if exists public.check_if_staff(text);
+drop function if exists public.increment_flames(text);
+
 -- Fonction: Vérifier si un utilisateur est Staff/Admin
 create or replace function public.check_if_staff(user_id_param text)
 returns boolean as $$
@@ -121,6 +125,40 @@ end;
 $$ language plpgsql security definer;
 
 -- 4. POLITIQUES RLS (Row Level Security)
+
+-- Nettoyage des anciennes politiques pour éviter les erreurs "already exists"
+do $$ 
+begin
+    -- members
+    drop policy if exists "Tout le monde peut voir les membres" on public.members;
+    drop policy if exists "L'utilisateur ou le staff peut modifier son profil" on public.members;
+    drop policy if exists "Tout le monde peut s'enregistrer" on public.members;
+    
+    -- profile_comments
+    drop policy if exists "Tout le monde peut lire les commentaires" on public.profile_comments;
+    drop policy if exists "Les membres connectés peuvent commenter" on public.profile_comments;
+    drop policy if exists "Le propriétaire, l'auteur ou le staff peut supprimer" on public.profile_comments;
+    
+    -- notifications
+    drop policy if exists "L'utilisateur peut lire ses notifications" on public.notifications;
+    drop policy if exists "L'utilisateur peut marquer comme lu" on public.notifications;
+    drop policy if exists "Système/Utilisateurs peuvent créer des notifications" on public.notifications;
+    
+    -- shoutbox
+    drop policy if exists "Tout le monde peut lire les murmures" on public.shoutbox;
+    drop policy if exists "Les membres connectés peuvent murmurer" on public.shoutbox;
+    drop policy if exists "Le staff peut supprimer des murmures" on public.shoutbox;
+    
+    -- profile_views
+    drop policy if exists "Tout le monde peut voir les visites" on public.profile_views;
+    drop policy if exists "Les membres peuvent enregistrer une visite" on public.profile_views;
+    drop policy if exists "Les membres peuvent mettre à jour leur visite" on public.profile_views;
+    
+    -- private_messages
+    drop policy if exists "L'expéditeur et le destinataire peuvent lire" on public.private_messages;
+    drop policy if exists "Les membres peuvent envoyer des messages" on public.private_messages;
+    drop policy if exists "Le destinataire peut marquer comme lu" on public.private_messages;
+end $$;
 
 -- Activer RLS sur toutes les tables
 alter table public.members enable row level security;
