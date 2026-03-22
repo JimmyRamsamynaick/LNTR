@@ -11,6 +11,7 @@ interface StatusIndicatorProps {
   showCustomStatus?: boolean
   className?: string
   size?: 'sm' | 'md' | 'lg'
+  statusOverride?: DiscordStatus // Optionnel : pour forcer l'affichage sans attendre la BDD
 }
 
 const statusColors = {
@@ -34,13 +35,21 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   showText = false, 
   showCustomStatus = false,
   className = '',
-  size = 'md'
+  size = 'md',
+  statusOverride
 }) => {
-  const [status, setStatus] = useState<DiscordStatus>('offline')
+  const [status, setStatus] = useState<DiscordStatus>(statusOverride || 'offline')
   const [customStatus] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!statusOverride)
 
   useEffect(() => {
+    // Si on a un override, on l'utilise directement et on ne fetch pas
+    if (statusOverride) {
+      setStatus(statusOverride)
+      setLoading(false)
+      return
+    }
+
     const fetchStatus = async () => {
       try {
         const { data, error } = await supabase
@@ -56,10 +65,9 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
           if (data.status === 'offline') {
             setStatus('offline')
           } else {
-            // Otherwise check if they were active recently (within last 5 minutes)
+            // Otherwise check if they were active recently (within last 10 minutes)
             const lastSeenDate = new Date(data.last_seen).getTime()
             const now = Date.now()
-            // We use a more generous window (10 minutes) and handle potential clock skew
             const isRecent = !isNaN(lastSeenDate) && (Math.abs(now - lastSeenDate) < 600000)
             setStatus(isRecent ? (data.status as DiscordStatus) : 'offline')
           }
@@ -67,7 +75,6 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
           setStatus('offline')
         }
       } catch (e) {
-        // Silent fail for status
         setStatus('offline')
       } finally {
         setLoading(false)
@@ -75,10 +82,32 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
     }
 
     fetchStatus()
-    // Refresh status every 15 seconds
-    const interval = setInterval(fetchStatus, 15000)
-    return () => clearInterval(interval)
-  }, [userId])
+    
+    // Realtime listener for status changes
+    const channel = supabase
+      .channel(`status-update-${userId}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'members',
+        filter: `id=eq.${userId}`
+      }, (payload) => {
+        const data = payload.new
+        if (data.status === 'offline') {
+          setStatus('offline')
+        } else {
+          const lastSeenDate = new Date(data.last_seen).getTime()
+          const now = Date.now()
+          const isRecent = !isNaN(lastSeenDate) && (Math.abs(now - lastSeenDate) < 600000)
+          setStatus(isRecent ? (data.status as DiscordStatus) : 'offline')
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId, statusOverride])
 
   const sizeClasses = {
     sm: 'w-3 h-3',

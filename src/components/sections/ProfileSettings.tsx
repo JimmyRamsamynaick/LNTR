@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideUser, LucidePalette, LucideShield, LucideSave, LucideCheckCircle, LucideCrown, LucideSparkles, LucideArrowLeft, LucideFlame } from 'lucide-react'
+import { LucideUser, LucidePalette, LucideShield, LucideSave, LucideCheckCircle, LucideCrown, LucideSparkles, LucideArrowLeft, LucideFlame, LucideUpload, LucideLoader2, LucideTrash2 } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { DISCORD_CONFIG } from '../../lib/discord'
+import { supabase } from '../../lib/supabase'
 
 const ProfileSettings: React.FC = () => {
   const { user, updateProfile, loading, refreshUser } = useAuth()
@@ -13,6 +14,55 @@ const ProfileSettings: React.FC = () => {
   const [bannerUrl, setBannerUrl] = useState('')
   const [displayNameColor, setDisplayNameColor] = useState('#FFFFFF')
   const [saved, setSaved] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    if (!hasPackLanterne) {
+      alert("L'upload de bannière est réservé au Pack Lanterne !")
+      return
+    }
+
+    const isGif = file.type === 'image/gif'
+    if (isGif && !hasPackEternel) {
+      alert("Les GIFs en bannière sont réservés au Pack Éternel !")
+      return
+    }
+
+    try {
+      setUploading(true)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      
+      // We upload directly to the bucket root
+      const { error: uploadError, data } = await supabase.storage
+        .from('banners')
+        .upload(fileName, file, {
+          upsert: true
+        })
+
+      if (uploadError) {
+        console.error('Upload Error:', uploadError)
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('banners')
+        .getPublicUrl(fileName)
+
+      setBannerUrl(publicUrl)
+      console.log('Successfully uploaded:', publicUrl)
+    } catch (error: any) {
+      console.error('Full Error Object:', error)
+      alert(`Erreur lors de l'upload: ${error.message || 'Problème de connexion'}`)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // Initial refresh
   useEffect(() => {
@@ -203,23 +253,71 @@ const ProfileSettings: React.FC = () => {
                     </div>
 
                     {/* Image URL Input */}
-                    <div className="space-y-2">
-                      <input 
-                        type="text" 
-                        value={bannerUrl}
-                        onChange={(e) => {
-                          if (!hasPackLanterne) return
-                          const val = e.target.value
-                          if (val.toLowerCase().endsWith('.gif') && !hasPackEternel) {
-                            alert("Les GIFs en bannière sont réservés au Pack Éternel !")
-                            return
-                          }
-                          setBannerUrl(val)
-                        }}
-                        disabled={!hasPackLanterne}
-                        placeholder={hasPackEternel ? "URL de l'image ou du GIF..." : "URL de l'image (GIF réservé Éternel)..."}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500/50 outline-none transition-all"
-                      />
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input 
+                          type="text" 
+                          value={bannerUrl}
+                          onChange={(e) => {
+                            if (!hasPackLanterne) return
+                            const val = e.target.value
+                            if (val.toLowerCase().endsWith('.gif') && !hasPackEternel) {
+                              alert("Les GIFs en bannière sont réservés au Pack Éternel !")
+                              return
+                            }
+                            setBannerUrl(val)
+                          }}
+                          disabled={!hasPackLanterne}
+                          placeholder={hasPackEternel ? "URL de l'image ou du GIF..." : "URL de l'image (GIF réservé Éternel)..."}
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500/50 outline-none transition-all"
+                        />
+                        
+                        <div className="relative">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!hasPackLanterne) {
+                                alert("L'upload de bannière est réservé au Pack Lanterne !")
+                                return
+                              }
+                              fileInputRef.current?.click()
+                            }}
+                            disabled={uploading}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                              uploading 
+                                ? 'bg-amber-500/20 text-amber-500 cursor-wait' 
+                                : hasPackLanterne 
+                                  ? 'bg-amber-500 text-black hover:bg-amber-400 cursor-pointer' 
+                                  : 'bg-white/5 text-gray-500 cursor-not-allowed'
+                            }`}
+                          >
+                            {uploading ? (
+                              <LucideLoader2 size={18} className="animate-spin" />
+                            ) : (
+                              <LucideUpload size={18} />
+                            )}
+                            {uploading ? 'Upload...' : 'Uploader'}
+                          </button>
+                        </div>
+
+                        {bannerUrl && (
+                          <button
+                            onClick={() => setBannerUrl('')}
+                            className="p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all border border-red-500/20"
+                            title="Effacer la bannière"
+                          >
+                            <LucideTrash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+
                       <p className="text-[10px] text-gray-500 italic">
                         {hasPackEternel 
                           ? "Supporte les images (PNG, JPG) et les GIFs." 

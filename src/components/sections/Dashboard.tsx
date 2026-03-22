@@ -355,6 +355,7 @@ const Dashboard: React.FC = () => {
                     userId={user.id} 
                     size="lg"
                     className="absolute bottom-1 right-1 z-20 scale-110" 
+                    statusOverride={user.status as any}
                   />
                 </div>
                 <h2 
@@ -421,6 +422,7 @@ const Dashboard: React.FC = () => {
                      <StatusIndicator 
                        userId={user.id} 
                        showText 
+                       statusOverride={user.status as any}
                      />
                      <div className="text-gray-500 group-hover:text-amber-500 transition-colors">
                         <LucideSettings size={16} />
@@ -660,14 +662,6 @@ const Dashboard: React.FC = () => {
               </p>
               
               <div className="flex flex-wrap gap-4 items-center">
-                 <a 
-                   href={DISCORD_CONFIG.INVITE_LINK}
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   className="px-8 py-3 bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all hover:scale-105"
-                 >
-                   Rejoindre un salon vocal
-                 </a>
                  {!isVip && (
                    <Link to="/shop" className="px-8 py-3 bg-violet-600/20 border border-violet-500/30 text-violet-400 font-bold rounded-full hover:bg-violet-600/30 transition-all flex items-center gap-2">
                       <LucideZap size={18} /> Devenir VIP (3€)
