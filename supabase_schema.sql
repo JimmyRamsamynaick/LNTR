@@ -21,6 +21,7 @@ create table if not exists public.members (
     display_name_color text default '#FFFFFF',
     premium_tier integer default 0,
     incognito_mode boolean default false,
+    gold_nickname boolean default true,
     flames_count integer default 0,
     last_seen timestamp with time zone default now()
 );

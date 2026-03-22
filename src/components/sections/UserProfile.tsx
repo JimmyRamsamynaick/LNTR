@@ -79,6 +79,7 @@ const UserProfile: React.FC = () => {
             bannerColor: data.banner_color,
             displayNameColor: data.display_name_color,
             premium_tier: data.premium_tier,
+            gold_nickname: data.gold_nickname !== false,
             bannerUrl: data.banner_url,
             flames_count: data.flames_count || 0
           }
@@ -359,6 +360,7 @@ const UserProfile: React.FC = () => {
     DISCORD_CONFIG.ROLES.STAFF
   ].includes(roleId))
   const isEternel = isMemberStaff || (member.premium_tier || 0) >= 3
+  const hasGoldNickname = isEternel && member.gold_nickname !== false
 
   const handleFlame = async () => {
     if (!currentUser || currentUser.id === member.id) return
@@ -436,10 +438,10 @@ const UserProfile: React.FC = () => {
               </div>
 
               <h2 
-                className={`text-2xl md:text-4xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${isEternel ? 'nickname-golden-animated' : ''}`} 
+                className={`text-2xl md:text-4xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${hasGoldNickname ? 'nickname-golden-animated' : ''}`} 
                 style={{ 
-                  color: isEternel ? 'transparent' : (member.displayNameColor || '#FFFFFF'),
-                  WebkitTextFillColor: isEternel ? 'transparent' : 'initial'
+                  color: hasGoldNickname ? 'transparent' : (member.displayNameColor || '#FFFFFF'),
+                  WebkitTextFillColor: hasGoldNickname ? 'transparent' : 'initial'
                 }}
               >
                 {member.username}

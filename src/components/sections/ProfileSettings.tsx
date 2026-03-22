@@ -15,6 +15,7 @@ const ProfileSettings: React.FC = () => {
   const [displayNameColor, setDisplayNameColor] = useState('#FFFFFF')
   const [customStatus, setCustomStatus] = useState('')
   const [incognitoMode, setIncognitoMode] = useState(false)
+  const [goldNickname, setGoldNickname] = useState(true)
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
 
@@ -79,6 +80,7 @@ const ProfileSettings: React.FC = () => {
       setDisplayNameColor(user.displayNameColor || '#FFFFFF')
       setCustomStatus(user.custom_status || '')
       setIncognitoMode(user.incognito_mode || false)
+      setGoldNickname(user.gold_nickname !== false)
     }
   }, [user])
 
@@ -117,7 +119,8 @@ const ProfileSettings: React.FC = () => {
         bannerUrl: hasPackLanterne ? bannerUrl : '',
         displayNameColor: hasPackEclat ? displayNameColor : '#FFFFFF',
         custom_status: hasPackEclat ? customStatus : '',
-        incognito_mode: hasPackEternel ? incognitoMode : false
+        incognito_mode: hasPackEternel ? incognitoMode : false,
+        gold_nickname: hasPackEternel ? goldNickname : false
       })
       setSaved(true)
       setTimeout(() => {
@@ -180,10 +183,10 @@ const ProfileSettings: React.FC = () => {
                     />
                   </div>
                   <h4 
-                    className={`text-2xl font-bold mb-1 ${hasPackEternel ? 'nickname-golden-animated' : ''}`} 
+                    className={`text-2xl font-bold mb-1 ${hasPackEternel && goldNickname ? 'nickname-golden-animated' : ''}`} 
                     style={{ 
-                      color: hasPackEternel ? 'transparent' : (displayNameColor || '#FFFFFF'),
-                      WebkitTextFillColor: hasPackEternel ? 'transparent' : 'initial'
+                      color: hasPackEternel && goldNickname ? 'transparent' : (displayNameColor || '#FFFFFF'),
+                      WebkitTextFillColor: hasPackEternel && goldNickname ? 'transparent' : 'initial'
                     }}
                   >
                     {user.username}
@@ -420,6 +423,38 @@ const ProfileSettings: React.FC = () => {
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                           incognitoMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  {!hasPackEternel && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Requis: Pack Éternel</p>}
+                </div>
+
+                {/* Pseudo Gold Toggle - Pack Eternel (Tier 3) */}
+                <div className={`relative ${!hasPackEternel && 'opacity-40'} col-span-1 md:col-span-2 bg-amber-500/5 p-6 rounded-2xl border border-amber-500/10`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl ${hasPackEternel ? 'bg-amber-500/20 text-amber-500' : 'bg-white/5 text-gray-500'}`}>
+                        <LucideCrown size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white flex items-center gap-2">
+                          Pseudo Gold Animé
+                          {!hasPackEternel && <LucideCrown size={12} className="text-amber-500" />}
+                        </h4>
+                        <p className="text-xs text-gray-500">Activez l'effet doré animé sur votre pseudo (Tier 3 uniquement).</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => hasPackEternel && setGoldNickname(!goldNickname)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                        goldNickname ? 'bg-amber-500' : 'bg-white/10'
+                      } ${!hasPackEternel ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          goldNickname ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
                     </button>

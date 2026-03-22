@@ -51,7 +51,8 @@ const Members: React.FC = () => {
             bannerColor: m.banner_color,
             bannerUrl: m.banner_url,
             displayNameColor: m.display_name_color,
-            premium_tier: m.premium_tier || 0
+            premium_tier: m.premium_tier || 0,
+            gold_nickname: m.gold_nickname !== false
           }))
           setConnectedMembers(mappedMembers)
           // Mettre à jour le cache local
@@ -188,6 +189,7 @@ const Members: React.FC = () => {
                   DISCORD_CONFIG.ROLES.STAFF
                 ].includes(roleId))
                 const isEternel = isStaff || (m.premium_tier || 0) >= 3
+                const hasGoldNickname = isEternel && m.gold_nickname !== false
 
                 return (
                   <motion.div
@@ -241,7 +243,11 @@ const Members: React.FC = () => {
                         </div>
 
                         <h3 
-                          className={`text-lg font-bold mb-4 text-center truncate w-full ${isEternel ? 'nickname-golden-animated' : 'text-white'}`}
+                          className={`text-lg font-bold mb-4 text-center truncate w-full ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
+                          style={{ 
+                            color: hasGoldNickname ? 'transparent' : (m.displayNameColor || '#FFFFFF'),
+                            WebkitTextFillColor: hasGoldNickname ? 'transparent' : 'initial'
+                          }}
                         >
                           {m.username}
                         </h3>

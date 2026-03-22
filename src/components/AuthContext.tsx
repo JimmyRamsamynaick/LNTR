@@ -18,6 +18,7 @@ export interface DiscordUser {
   displayNameColor?: string
   premium_tier?: number // 0: none, 1: Eclat, 2: Lanterne, 3: Eternel
   incognito_mode?: boolean
+  gold_nickname?: boolean
   flames_count?: number
 }
 
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           displayNameColor: memberData.display_name_color || user.displayNameColor,
           premium_tier: memberData.premium_tier || 0,
           incognito_mode: memberData.incognito_mode || false,
+          gold_nickname: memberData.gold_nickname !== false, // default true
           flames_count: memberData.flames_count || 0
         }
         setUser(updatedUser)
@@ -152,6 +154,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           display_name_color: updatedUser.displayNameColor || '#FFFFFF',
           premium_tier: updatedUser.premium_tier || 0,
           incognito_mode: updatedUser.incognito_mode || false,
+          gold_nickname: updatedUser.gold_nickname !== false,
           last_seen: new Date().toISOString()
         })
       if (error) {
