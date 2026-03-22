@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame } from 'lucide-react'
+import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare } from 'lucide-react'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { DiscordUser, useAuth } from '../AuthContext'
 import StatusIndicator from '../ui/StatusIndicator'
@@ -37,7 +37,9 @@ const UserProfile: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
   const [showChatModal, setShowChatModal] = useState(false)
+  const [showShoutModal, setShowShoutModal] = useState(false)
   const [chatMessage, setChatMessage] = useState('')
+  const [shoutMessage, setShoutMessage] = useState('')
 
   useEffect(() => {
     const fetchMember = async () => {
@@ -259,6 +261,32 @@ const UserProfile: React.FC = () => {
     } catch (e) {
       console.error('Failed to send DM:', e)
       alert('Erreur lors de l\'envoi du message.')
+    }
+  }
+
+  const handleSendShout = async () => {
+    if (!currentUser || !shoutMessage.trim()) return
+
+    try {
+      const { error } = await supabase
+        .from('shoutbox')
+        .insert({
+          user_id: currentUser.id,
+          username: currentUser.username,
+          avatar: currentUser.avatar,
+          content: shoutMessage.trim(),
+          premium_tier: currentUser.premium_tier || 0,
+          roles: currentUser.roles || []
+        })
+
+      if (error) throw error
+
+      setShoutMessage('')
+      setShowShoutModal(false)
+      alert('Votre murmure a été envoyé au dashboard !')
+    } catch (e) {
+      console.error('Failed to shout:', e)
+      alert('Erreur lors de l\'envoi du murmure.')
     }
   }
 
@@ -493,12 +521,24 @@ const UserProfile: React.FC = () => {
                 </a>
                 
                 {currentUser && currentUser.id !== id && (
-                  <button 
-                    onClick={() => setShowChatModal(true)}
-                    className="px-8 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-full hover:bg-white/10 transition-all flex items-center gap-2"
-                  >
-                    <LucideMessageCircle size={18} /> Message Privé
-                  </button>
+                  <div className="flex flex-wrap gap-4">
+                    <button 
+                      onClick={() => {
+                        setShoutMessage(`@${member.username} `)
+                        setShowShoutModal(true)
+                      }}
+                      className="px-8 py-3 bg-amber-600/10 border border-amber-600/20 text-amber-500 font-bold rounded-full hover:bg-amber-600 hover:text-black transition-all flex items-center gap-2"
+                    >
+                      <LucideMessageSquare size={18} /> Murmurer
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowChatModal(true)}
+                      className="px-8 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-full hover:bg-white/10 transition-all flex items-center gap-2"
+                    >
+                      <LucideMessageCircle size={18} /> Message Privé
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -543,6 +583,54 @@ const UserProfile: React.FC = () => {
                         className="px-8 py-3 bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all flex items-center gap-2 disabled:opacity-50"
                       >
                         <LucideSend size={18} /> Envoyer
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* Shout Modal */}
+            <AnimatePresence>
+              {showShoutModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="w-full max-w-lg bg-night-800 border border-white/10 rounded-3xl p-8 relative shadow-2xl"
+                  >
+                    <button 
+                      onClick={() => setShowShoutModal(false)}
+                      className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+                    >
+                      <LucideX size={24} />
+                    </button>
+                    
+                    <h3 className="text-2xl font-serif font-bold mb-2">Murmurer à la communauté</h3>
+                    <p className="text-gray-500 text-sm mb-6 italic">"Votre message sera visible par tous sur le Dashboard."</p>
+                    
+                    <textarea
+                      value={shoutMessage}
+                      onChange={(e) => setShoutMessage(e.target.value)}
+                      placeholder="Votre murmure..."
+                      maxLength={150}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-500 focus:border-amber-500/50 outline-none transition-all resize-none min-h-[100px] mb-6"
+                    />
+                    
+                    <div className="flex justify-end gap-4">
+                      <button 
+                        onClick={() => setShowShoutModal(false)}
+                        className="px-6 py-3 text-gray-500 hover:text-white font-bold transition-colors"
+                      >
+                        Annuler
+                      </button>
+                      <button 
+                        onClick={handleSendShout}
+                        disabled={!shoutMessage.trim()}
+                        className="px-8 py-3 bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <LucideSend size={18} /> Murmurer
                       </button>
                     </div>
                   </motion.div>
