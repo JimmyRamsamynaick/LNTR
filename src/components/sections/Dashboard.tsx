@@ -347,6 +347,7 @@ const Dashboard: React.FC = () => {
 
   const isEternel = isStaff || (user?.premium_tier || 0) >= 3
   const hasGoldNickname = isEternel && user?.gold_nickname !== false
+  const hasGradientNickname = isEternel && !user?.gold_nickname && user?.nicknameGradientColor1 && user?.nicknameGradientColor2
 
   const statusOptions = [
     { id: 'online', label: 'En ligne', color: 'bg-green-500' },
@@ -422,8 +423,10 @@ const Dashboard: React.FC = () => {
                 <h2 
                   className={`text-2xl md:text-3xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
                   style={{ 
-                    color: hasGoldNickname ? 'transparent' : (user.displayNameColor || '#FFFFFF'),
-                    WebkitTextFillColor: hasGoldNickname ? 'transparent' : 'initial'
+                    background: hasGradientNickname ? `linear-gradient(to right, ${user.nicknameGradientColor1}, ${user.nicknameGradientColor2})` : 'none',
+                    WebkitBackgroundClip: hasGradientNickname ? 'text' : 'initial',
+                    color: hasGoldNickname ? 'transparent' : (hasGradientNickname ? 'transparent' : (user.displayNameColor || '#FFFFFF')),
+                    WebkitTextFillColor: (hasGoldNickname || hasGradientNickname) ? 'transparent' : 'initial'
                   }}
                 >
                   {user.username}

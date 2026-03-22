@@ -78,6 +78,8 @@ const UserProfile: React.FC = () => {
             bio: data.bio,
             bannerColor: data.banner_color,
             displayNameColor: data.display_name_color,
+            nicknameGradientColor1: data.nickname_gradient_color1,
+            nicknameGradientColor2: data.nickname_gradient_color2,
             premium_tier: data.premium_tier,
             gold_nickname: data.gold_nickname !== false,
             bannerUrl: data.banner_url,
@@ -361,6 +363,7 @@ const UserProfile: React.FC = () => {
   ].includes(roleId))
   const isEternel = isMemberStaff || (member.premium_tier || 0) >= 3
   const hasGoldNickname = isEternel && member.gold_nickname !== false
+  const hasGradientNickname = isEternel && !member.gold_nickname && member.nicknameGradientColor1 && member.nicknameGradientColor2
 
   const handleFlame = async () => {
     if (!currentUser || currentUser.id === member.id) return
@@ -447,8 +450,10 @@ const UserProfile: React.FC = () => {
               <h2 
                 className={`text-2xl md:text-4xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${hasGoldNickname ? 'nickname-golden-animated' : ''}`} 
                 style={{ 
-                  color: hasGoldNickname ? 'transparent' : (member.displayNameColor || '#FFFFFF'),
-                  WebkitTextFillColor: hasGoldNickname ? 'transparent' : 'initial'
+                  background: hasGradientNickname ? `linear-gradient(to right, ${member.nicknameGradientColor1}, ${member.nicknameGradientColor2})` : 'none',
+                  WebkitBackgroundClip: hasGradientNickname ? 'text' : 'initial',
+                  color: hasGoldNickname ? 'transparent' : (hasGradientNickname ? 'transparent' : (member.displayNameColor || '#FFFFFF')),
+                  WebkitTextFillColor: (hasGoldNickname || hasGradientNickname) ? 'transparent' : 'initial'
                 }}
               >
                 {member.username}

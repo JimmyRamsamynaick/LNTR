@@ -16,6 +16,8 @@ const ProfileSettings: React.FC = () => {
   const [customStatus, setCustomStatus] = useState('')
   const [incognitoMode, setIncognitoMode] = useState(false)
   const [goldNickname, setGoldNickname] = useState(true)
+  const [nicknameGradientColor1, setNicknameGradientColor1] = useState('#FFFFFF')
+  const [nicknameGradientColor2, setNicknameGradientColor2] = useState('#FFFFFF')
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
 
@@ -81,6 +83,8 @@ const ProfileSettings: React.FC = () => {
       setCustomStatus(user.custom_status || '')
       setIncognitoMode(user.incognito_mode || false)
       setGoldNickname(user.gold_nickname !== false)
+      setNicknameGradientColor1(user.nicknameGradientColor1 || '#FFFFFF')
+      setNicknameGradientColor2(user.nicknameGradientColor2 || '#FFFFFF')
     }
   }, [user])
 
@@ -120,7 +124,9 @@ const ProfileSettings: React.FC = () => {
         displayNameColor: hasPackEclat ? displayNameColor : '#FFFFFF',
         custom_status: hasPackEclat ? customStatus : '',
         incognito_mode: hasPackEternel ? incognitoMode : false,
-        gold_nickname: hasPackEternel ? goldNickname : false
+        gold_nickname: hasPackEternel ? goldNickname : false,
+        nicknameGradientColor1: hasPackEternel ? nicknameGradientColor1 : null,
+        nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : null
       })
       setSaved(true)
       setTimeout(() => {
@@ -185,8 +191,14 @@ const ProfileSettings: React.FC = () => {
                   <h4 
                     className={`text-2xl font-bold mb-1 ${hasPackEternel && goldNickname ? 'nickname-golden-animated' : ''}`} 
                     style={{ 
-                      color: hasPackEternel && goldNickname ? 'transparent' : (displayNameColor || '#FFFFFF'),
-                      WebkitTextFillColor: hasPackEternel && goldNickname ? 'transparent' : 'initial'
+                      background: hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 
+                        ? `linear-gradient(to right, ${nicknameGradientColor1}, ${nicknameGradientColor2})` 
+                        : 'none',
+                      WebkitBackgroundClip: hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 ? 'text' : 'initial',
+                      color: hasPackEternel && goldNickname 
+                        ? 'transparent' 
+                        : (hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 ? 'transparent' : (displayNameColor || '#FFFFFF')),
+                      WebkitTextFillColor: hasPackEternel && (goldNickname || (!goldNickname && nicknameGradientColor1 && nicknameGradientColor2)) ? 'transparent' : 'initial'
                     }}
                   >
                     {user.username}
@@ -460,6 +472,67 @@ const ProfileSettings: React.FC = () => {
                     </button>
                   </div>
                   {!hasPackEternel && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Requis: Pack Éternel</p>}
+                </div>
+
+                {/* Nickname Gradient - Pack Eternel (Tier 3) */}
+                <div className={`relative ${(!hasPackEternel || goldNickname) && 'opacity-40'} col-span-1 md:col-span-2 bg-amber-500/5 p-6 rounded-2xl border border-amber-500/10`}>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl ${hasPackEternel && !goldNickname ? 'bg-amber-500/20 text-amber-500' : 'bg-white/5 text-gray-500'}`}>
+                        <LucidePalette size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white flex items-center gap-2">
+                          Dégradé Personnalisé
+                          {!hasPackEternel && <LucideCrown size={12} className="text-amber-500" />}
+                        </h4>
+                        <p className="text-xs text-gray-500">Choisissez deux couleurs pour un pseudo en dégradé (Désactivez le Gold d'abord).</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Couleur 1</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="color" 
+                          value={nicknameGradientColor1}
+                          onChange={(e) => hasPackEternel && !goldNickname && setNicknameGradientColor1(e.target.value)}
+                          disabled={!hasPackEternel || goldNickname}
+                          className="w-10 h-10 rounded-lg bg-transparent border-none cursor-pointer"
+                        />
+                        <input 
+                          type="text" 
+                          value={nicknameGradientColor1}
+                          onChange={(e) => hasPackEternel && !goldNickname && setNicknameGradientColor1(e.target.value)}
+                          disabled={!hasPackEternel || goldNickname}
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Couleur 2</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="color" 
+                          value={nicknameGradientColor2}
+                          onChange={(e) => hasPackEternel && !goldNickname && setNicknameGradientColor2(e.target.value)}
+                          disabled={!hasPackEternel || goldNickname}
+                          className="w-10 h-10 rounded-lg bg-transparent border-none cursor-pointer"
+                        />
+                        <input 
+                          type="text" 
+                          value={nicknameGradientColor2}
+                          onChange={(e) => hasPackEternel && !goldNickname && setNicknameGradientColor2(e.target.value)}
+                          disabled={!hasPackEternel || goldNickname}
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {!hasPackEternel && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Requis: Pack Éternel</p>}
+                  {hasPackEternel && goldNickname && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Désactivez le pseudo gold pour utiliser le dégradé</p>}
                 </div>
               </div>
             </div>

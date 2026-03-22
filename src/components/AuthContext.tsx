@@ -16,6 +16,8 @@ export interface DiscordUser {
   bannerColor?: string
   bannerUrl?: string
   displayNameColor?: string
+  nicknameGradientColor1?: string
+  nicknameGradientColor2?: string
   premium_tier?: number // 0: none, 1: Eclat, 2: Lanterne, 3: Eternel
   premium_since?: string
   incognito_mode?: boolean
@@ -90,6 +92,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bannerColor: memberData?.banner_color || user.bannerColor,
           bannerUrl: memberData?.banner_url || user.bannerUrl,
           displayNameColor: memberData?.display_name_color || user.displayNameColor,
+          nicknameGradientColor1: memberData?.nickname_gradient_color1 || user.nicknameGradientColor1,
+          nicknameGradientColor2: memberData?.nickname_gradient_color2 || user.nicknameGradientColor2,
           premium_tier: premium_tier || memberData?.premium_tier || 0,
           premium_since: memberData?.premium_since || (premium_tier > 0 ? (user.premium_since || new Date().toISOString()) : null),
           incognito_mode: memberData?.incognito_mode || false,
@@ -198,6 +202,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           banner_color: updatedUser.bannerColor || '#1a1a1a',
           banner_url: updatedUser.bannerUrl || null,
           display_name_color: updatedUser.displayNameColor || '#FFFFFF',
+          nickname_gradient_color1: updatedUser.nicknameGradientColor1 || null,
+          nickname_gradient_color2: updatedUser.nicknameGradientColor2 || null,
           premium_tier: updatedUser.premium_tier || 0,
           premium_since: updatedUser.premium_since || null,
           incognito_mode: updatedUser.incognito_mode || false,
@@ -297,6 +303,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bannerColor: memberData?.banner_color,
         bannerUrl: memberData?.banner_url,
         displayNameColor: memberData?.display_name_color,
+        nicknameGradientColor1: memberData?.nickname_gradient_color1,
+        nicknameGradientColor2: memberData?.nickname_gradient_color2,
         premium_tier: premium_tier || memberData?.premium_tier || 0,
         premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : null)
       }
