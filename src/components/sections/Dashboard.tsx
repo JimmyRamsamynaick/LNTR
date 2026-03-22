@@ -311,7 +311,11 @@ const Dashboard: React.FC = () => {
     DISCORD_CONFIG.ROLES.STAFF
   ].includes(roleId))
 
-  const isVipOnDiscord = user?.roles?.includes(DISCORD_CONFIG.ROLES.VIP)
+  const isVipOnDiscord = user?.roles?.some(roleId => [
+    DISCORD_CONFIG.ROLES.VIP_ECLAT,
+    DISCORD_CONFIG.ROLES.VIP_LANTERNE,
+    DISCORD_CONFIG.ROLES.VIP_ETERNEL
+  ].includes(roleId))
   const isVip = isStaff || isVipOnDiscord || (user?.premium_tier || 0) >= 1
 
   const premiumTiers = [
@@ -715,60 +719,67 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Profile Comments Management - NEW POSITION (ABOVE SHOUTBOX) */}
-            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md relative z-10">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-xl bg-amber-600/20 text-amber-500">
-                  <LucideMessageCircle className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold">Derniers commentaires sur ton profil</h3>
-              </div>
+            {/* Profile Comments Management */}
+            <div className="p-8 md:p-12 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
               
-              <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              <h3 className="text-2xl md:text-3xl font-serif font-black mb-10 flex items-center gap-4">
+                Derniers mots sur ton profil
+                <div className="h-px flex-1 bg-white/5" />
+              </h3>
+
+              <div className="space-y-6">
                 {profileComments.length === 0 ? (
-                  <p className="text-gray-600 text-sm italic py-4">Aucun commentaire sur ton profil pour le moment.</p>
+                  <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
+                    <LucideMessageCircle size={40} className="mx-auto mb-4 text-gray-700" />
+                    <p className="text-gray-500 italic">"Le silence règne encore sur ton profil..."</p>
+                  </div>
                 ) : (
                   profileComments.map((comment) => (
-                    <div key={comment.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex gap-3">
-                          <img
-                            src={comment.avatar 
-                              ? `https://cdn.discordapp.com/avatars/${comment.user_id}/${comment.avatar}.png?size=64`
-                              : `https://cdn.discordapp.com/embed/avatars/${parseInt(comment.user_id) % 5}.png`
-                            }
-                            alt={comment.username}
-                            className="w-10 h-10 rounded-full border border-white/10"
-                          />
+                    <div key={comment.id} className="p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all group/comment">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-4">
+                          <Link to={`/profile/${comment.user_id}`}>
+                            <img
+                              src={comment.avatar 
+                                ? `https://cdn.discordapp.com/avatars/${comment.user_id}/${comment.avatar}.png?size=64` 
+                                : `https://cdn.discordapp.com/embed/avatars/${parseInt(comment.user_id) % 5}.png`}
+                              alt={comment.username}
+                              className="w-12 h-12 rounded-2xl border-2 border-white/5 group-hover/comment:border-amber-500/30 transition-all object-cover shadow-xl"
+                            />
+                          </Link>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-white">{comment.username}</span>
-                              <span className="text-[10px] text-gray-600">{new Date(comment.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-sm text-gray-300 italic">"{comment.content}"</p>
+                            <Link to={`/profile/${comment.user_id}`} className="font-black text-white hover:text-amber-500 transition-colors uppercase tracking-tighter">
+                              {comment.username}
+                            </Link>
+                            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mt-0.5">
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                         
                         {comment.replies?.length === 0 && (
                           <button
                             onClick={() => setReplyingToComment(replyingToComment === comment.id ? null : comment.id)}
-                            className="p-2 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-black transition-all"
+                            className="p-3 rounded-xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-black transition-all shadow-lg"
                             title="Répondre"
                           >
-                            <LucideReply size={16} />
+                            <LucideReply size={18} />
                           </button>
                         )}
                       </div>
 
+                      <p className="text-gray-300 leading-relaxed italic font-light px-2 mb-6">"{comment.content}"</p>
+
                       {/* Existing Replies */}
                       {comment.replies?.map((reply: any) => (
-                        <div key={reply.id} className="ml-12 p-3 rounded-xl bg-amber-500/5 border-l-2 border-amber-500 flex gap-3">
-                          <div className="p-1 rounded-full bg-amber-500 text-black">
-                            <LucideReply size={10} className="transform scale-x-[-1]" />
+                        <div key={reply.id} className="ml-6 md:ml-12 p-4 rounded-2xl bg-amber-500/5 border-l-4 border-amber-500 flex gap-4 shadow-inner">
+                          <div className="p-2 rounded-xl bg-amber-500 text-black shadow-lg">
+                            <LucideReply size={12} className="transform scale-x-[-1]" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Ta réponse</p>
-                            <p className="text-sm text-gray-300 italic">"{reply.content}"</p>
+                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-1">Ta réponse</p>
+                            <p className="text-sm text-gray-300 italic font-light leading-relaxed">"{reply.content}"</p>
                           </div>
                         </div>
                       ))}
@@ -780,31 +791,31 @@ const Dashboard: React.FC = () => {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="ml-12 space-y-3"
+                            className="ml-6 md:ml-12 mt-4 space-y-4"
                           >
                             <div className="relative">
                               <textarea
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
                                 placeholder="Écris ta réponse..."
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all resize-none min-h-[80px]"
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-amber-500/50 outline-none transition-all resize-none min-h-[100px] shadow-inner"
                               />
-                              <div className="absolute bottom-2 right-2 flex gap-2">
+                              <div className="absolute bottom-3 right-3 flex gap-3">
                                 <button
                                   onClick={() => {
                                     setReplyingToComment(null)
                                     setReplyContent('')
                                   }}
-                                  className="p-2 text-gray-500 hover:text-white transition-colors"
+                                  className="p-2.5 text-gray-500 hover:text-white transition-colors"
                                 >
-                                  <LucideX size={16} />
+                                  <LucideX size={20} />
                                 </button>
                                 <button
                                   onClick={() => handleReplyComment(comment.id)}
                                   disabled={!replyContent.trim()}
-                                  className="p-2 bg-amber-600 text-black rounded-lg hover:bg-amber-500 transition-all disabled:opacity-50"
+                                  className="p-3 bg-amber-600 text-black rounded-xl hover:bg-amber-500 transition-all disabled:opacity-50 shadow-xl shadow-amber-500/20"
                                 >
-                                  <LucideSend size={16} />
+                                  <LucideSend size={20} />
                                 </button>
                               </div>
                             </div>
@@ -817,41 +828,86 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Shoutbox - NEW POSITION */}
-            <div className="h-[400px] w-full">
+            {/* Shoutbox */}
+            <div className="h-[450px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10">
               <Shoutbox />
             </div>
 
-            <div className="p-10 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 backdrop-blur-md relative overflow-hidden">
+            <div className="p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-white/5 to-transparent border border-white/10 backdrop-blur-md relative overflow-hidden shadow-2xl">
               {/* VIP Badge Decor */}
               {isVip ? (
-                <div className="absolute top-4 right-4 p-2 rounded-lg bg-amber-500 text-black border border-amber-500 flex items-center gap-2 shadow-[0_0_20px_rgba(255,170,0,0.4)] animate-pulse">
-                  <LucideStar size={16} fill="currentColor" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Membre VIP Actif</span>
+                <div className="absolute top-6 right-6 p-3 rounded-2xl bg-amber-500 text-black border border-amber-500 flex items-center gap-3 shadow-[0_10px_30px_rgba(255,170,0,0.4)] animate-pulse">
+                  <LucideStar size={20} fill="currentColor" />
+                  <span className="text-xs font-black uppercase tracking-widest">Veilleur VIP Actif</span>
                 </div>
               ) : (
-                <div className="absolute top-4 right-4 p-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-2">
-                  <LucideZap size={16} fill="currentColor" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Offre VIP disponible</span>
+                <div className="absolute top-6 right-6 p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-3">
+                  <LucideZap size={20} fill="currentColor" />
+                  <span className="text-xs font-black uppercase tracking-widest">Grade VIP disponible</span>
                 </div>
               )}
 
-              <h3 className="text-2xl font-serif font-bold mb-6">Bienvenue sous la Lanterne, {user.username} !</h3>
-              <p className="text-gray-400 leading-relaxed mb-8 max-w-xl">
+              <h3 className="text-2xl md:text-4xl font-serif font-black mb-6 pr-20 leading-tight">Bienvenue sous la Lanterne, {user.username} !</h3>
+              <p className="text-gray-400 leading-relaxed mb-10 max-w-xl text-lg font-light italic">
                 {isVip 
-                  ? "Merci de soutenir la communauté ! En tant que membre VIP, tu as accès à tous les avantages exclusifs du site et du serveur."
-                  : "Heureux de te revoir parmi nous. Ton refuge nocturne est prêt. Explore les salons, participe aux événements et profite de l'ambiance unique de la Lanterne Nocturne."}
+                  ? "Merci de soutenir la communauté ! En tant que membre privilégié, tu as accès à tous les avantages exclusifs du sanctuaire."
+                  : "Heureux de te revoir parmi nous. Ton refuge nocturne est prêt. Explore les salons et profite de l'ambiance unique de la Lanterne Nocturne."}
               </p>
               
-              <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex flex-wrap gap-6 items-center">
                  {!isVip && (
-                   <Link to="/shop" className="px-8 py-3 bg-violet-600/20 border border-violet-500/30 text-violet-400 font-bold rounded-full hover:bg-violet-600/30 transition-all flex items-center gap-2">
-                      <LucideZap size={18} /> Devenir VIP (3€)
+                   <Link to="/shop" className="px-10 py-4 bg-violet-600 text-white font-black rounded-2xl hover:bg-violet-500 transition-all hover:scale-105 flex items-center gap-3 uppercase tracking-widest text-xs shadow-xl shadow-violet-600/20">
+                      <LucideZap size={20} /> Devenir VIP (3€)
                    </Link>
                  )}
+                 <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Serveur en ligne</span>
+                 </div>
               </div>
             </div>
+
+            {/* Recent Visitors - Only for Tier 3 / Staff */}
+            {isEternel && (
+              <div className="p-8 md:p-12 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                <h3 className="text-2xl font-serif font-black mb-8 flex items-center gap-4">
+                  Veilleurs ayant visité ton profil
+                  <LucideActivity size={20} className="text-amber-500 animate-pulse" />
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                  {recentVisitors.length === 0 ? (
+                    <div className="col-span-full py-8 text-center bg-white/5 rounded-3xl border border-white/5">
+                      <p className="text-gray-600 italic text-sm">"Personne n'a encore franchi ton seuil..."</p>
+                    </div>
+                  ) : (
+                    recentVisitors.map((v) => (
+                      <Link 
+                        key={v.viewer_id} 
+                        to={`/profile/${v.viewer_id}`}
+                        className="flex flex-col items-center gap-3 p-4 rounded-3xl hover:bg-white/5 transition-all group/visitor"
+                      >
+                        <div className="relative">
+                          <img
+                            src={v.viewer_avatar 
+                              ? `https://cdn.discordapp.com/avatars/${v.viewer_id}/${v.viewer_avatar}.png?size=64` 
+                              : `https://cdn.discordapp.com/embed/avatars/${parseInt(v.viewer_id) % 5}.png`}
+                            alt={v.viewer_username}
+                            className="w-16 h-16 rounded-2xl border-2 border-white/10 group-hover/visitor:border-amber-500/50 group-hover/visitor:scale-110 transition-all object-cover shadow-xl"
+                          />
+                          <div className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover/visitor:opacity-100 rounded-2xl transition-opacity" />
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 group-hover/visitor:text-amber-500 transition-colors text-center uppercase tracking-tighter truncate w-full">
+                          {v.viewer_username}
+                        </span>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
+        </div>
       </div>
     </div>
   )

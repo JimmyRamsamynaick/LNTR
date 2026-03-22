@@ -99,7 +99,11 @@ const ProfileSettings: React.FC = () => {
     DISCORD_CONFIG.ROLES.STAFF
   ].includes(roleId))
 
-  const isVipOnDiscord = user?.roles?.includes(DISCORD_CONFIG.ROLES.VIP)
+  const isVipOnDiscord = user?.roles?.some(roleId => [
+    DISCORD_CONFIG.ROLES.VIP_ECLAT,
+    DISCORD_CONFIG.ROLES.VIP_LANTERNE,
+    DISCORD_CONFIG.ROLES.VIP_ETERNEL
+  ].includes(roleId))
 
   const hasPackEclat = isStaff || isVipOnDiscord || (user?.premium_tier || 0) >= 1
   const hasPackLanterne = isStaff || (user?.premium_tier || 0) >= 2
