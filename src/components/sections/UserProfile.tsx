@@ -341,6 +341,8 @@ const UserProfile: React.FC = () => {
     DISCORD_CONFIG.ROLES.STAFF
   ].includes(roleId))
   const isEternel = isMemberStaff || (member.premium_tier || 0) >= 3
+
+  const handleFlame = async () => {
     if (!currentUser || currentUser.id === member.id) return
     
     try {
