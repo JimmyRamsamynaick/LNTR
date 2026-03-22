@@ -10,6 +10,7 @@ const ProfileSettings: React.FC = () => {
   const navigate = useNavigate()
   const [bio, setBio] = useState('')
   const [bannerColor, setBannerColor] = useState('#1a1a1a')
+  const [bannerUrl, setBannerUrl] = useState('')
   const [displayNameColor, setDisplayNameColor] = useState('#FFFFFF')
   const [saved, setSaved] = useState(false)
 
@@ -23,6 +24,7 @@ const ProfileSettings: React.FC = () => {
     if (user) {
       setBio(user.bio || '')
       setBannerColor(user.bannerColor || '#1a1a1a')
+      setBannerUrl(user.bannerUrl || '')
       setDisplayNameColor(user.displayNameColor || '#FFFFFF')
     }
   }, [user])
@@ -55,6 +57,7 @@ const ProfileSettings: React.FC = () => {
       await updateProfile({
         bio,
         bannerColor: hasPackLanterne ? bannerColor : '#1a1a1a',
+        bannerUrl: hasPackLanterne ? bannerUrl : '',
         displayNameColor: hasPackEclat ? displayNameColor : '#FFFFFF'
       })
       setSaved(true)
@@ -100,8 +103,12 @@ const ProfileSettings: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-32">
               <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-6">Aperçu direct</h3>
-              <div className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl">
-                <div className="h-24 w-full" style={{ backgroundColor: bannerColor }} />
+              <div className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl relative">
+                {bannerUrl ? (
+                  <img src={bannerUrl} className="h-24 w-full object-cover" alt="Banner" />
+                ) : (
+                  <div className="h-24 w-full" style={{ backgroundColor: bannerColor }} />
+                )}
                 <div className="px-8 pb-8 -mt-12">
                   <div className="relative mb-4">
                     <img 
@@ -168,27 +175,59 @@ const ProfileSettings: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Banner Color - Pack Lanterne (Tier 2) */}
+                {/* Banner Customization - Pack Lanterne+ (Tier 2+) */}
                 <div className={`relative ${!hasPackLanterne && 'opacity-40'}`}>
                   <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-2">
-                    Couleur de Bannière
+                    Bannière du Profil
                     {!hasPackLanterne && <LucideCrown size={10} className="text-amber-500" />}
                   </label>
-                  <div className="flex gap-3">
-                    <input 
-                      type="color" 
-                      value={bannerColor}
-                      onChange={(e) => hasPackLanterne && setBannerColor(e.target.value)}
-                      disabled={!hasPackLanterne}
-                      className={`w-12 h-12 rounded-xl bg-transparent border-none ${hasPackLanterne ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                    />
-                    <input 
-                      type="text" 
-                      value={bannerColor}
-                      onChange={(e) => hasPackLanterne && setBannerColor(e.target.value)}
-                      disabled={!hasPackLanterne}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-mono"
-                    />
+                  
+                  <div className="space-y-4">
+                    {/* Color Picker */}
+                    <div className="flex gap-3">
+                      <input 
+                        type="color" 
+                        value={bannerColor}
+                        onChange={(e) => hasPackLanterne && setBannerColor(e.target.value)}
+                        disabled={!hasPackLanterne}
+                        className={`w-12 h-12 rounded-xl bg-transparent border-none ${hasPackLanterne ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                      />
+                      <input 
+                        type="text" 
+                        value={bannerColor}
+                        onChange={(e) => hasPackLanterne && setBannerColor(e.target.value)}
+                        disabled={!hasPackLanterne}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-mono"
+                        placeholder="#1a1a1a"
+                      />
+                    </div>
+
+                    {/* Image URL Input */}
+                    <div className="space-y-2">
+                      <input 
+                        type="text" 
+                        value={bannerUrl}
+                        onChange={(e) => {
+                          if (!hasPackLanterne) return
+                          const val = e.target.value
+                          if (val.toLowerCase().endsWith('.gif') && !hasPackEternel) {
+                            alert("Les GIFs en bannière sont réservés au Pack Éternel !")
+                            return
+                          }
+                          setBannerUrl(val)
+                        }}
+                        disabled={!hasPackLanterne}
+                        placeholder={hasPackEternel ? "URL de l'image ou du GIF..." : "URL de l'image (GIF réservé Éternel)..."}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-amber-500/50 outline-none transition-all"
+                      />
+                      <p className="text-[10px] text-gray-500 italic">
+                        {hasPackEternel 
+                          ? "Supporte les images (PNG, JPG) et les GIFs." 
+                          : hasPackLanterne 
+                            ? "Supporte les images (PNG, JPG). Passez à l'Éternel pour les GIFs !" 
+                            : "Requis: Pack Lanterne (Image) ou Éternel (GIF)"}
+                      </p>
+                    </div>
                   </div>
                   {!hasPackLanterne && <p className="text-[10px] text-amber-500/60 mt-2 font-bold uppercase">Requis: Pack Lanterne</p>}
                 </div>

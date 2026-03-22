@@ -59,7 +59,8 @@ const UserProfile: React.FC = () => {
             bio: data.bio,
             bannerColor: data.banner_color,
             displayNameColor: data.display_name_color,
-            premium_tier: data.premium_tier
+            premium_tier: data.premium_tier,
+            bannerUrl: data.banner_url
           })
         }
       } catch (e) {
@@ -328,10 +329,18 @@ const UserProfile: React.FC = () => {
           <div className="md:col-span-1">
             <div className="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden text-center">
               {/* Profile Banner */}
-              <div 
-                className="absolute top-0 left-0 w-full h-24 z-0 opacity-50" 
-                style={{ backgroundColor: member.bannerColor || 'transparent' }}
-              />
+              {member.bannerUrl ? (
+                <img 
+                  src={member.bannerUrl} 
+                  className="absolute top-0 left-0 w-full h-24 z-0 object-cover opacity-50" 
+                  alt="Banner"
+                />
+              ) : (
+                <div 
+                  className="absolute top-0 left-0 w-full h-24 z-0 opacity-50" 
+                  style={{ backgroundColor: member.bannerColor || 'transparent' }}
+                />
+              )}
               
               <div className="relative mb-6 mt-8">
                 <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125" />

@@ -327,8 +327,20 @@ const Dashboard: React.FC = () => {
           {/* Profile Sidebar */}
           <div className="lg:col-span-1 space-y-8">
             <div className="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-amber-600" />
-              <div className="flex flex-col items-center">
+              {user.bannerUrl ? (
+                <img 
+                  src={user.bannerUrl} 
+                  className="absolute top-0 left-0 w-full h-24 z-0 object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-500" 
+                  alt="Banner"
+                />
+              ) : (
+                <div 
+                  className="absolute top-0 left-0 w-full h-24 z-0 opacity-20 group-hover:opacity-40 transition-opacity duration-500" 
+                  style={{ backgroundColor: user.bannerColor || 'transparent' }}
+                />
+              )}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-amber-600 z-10" />
+              <div className="flex flex-col items-center relative z-10">
                 <div className="relative mb-6">
                   <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125 group-hover:scale-150 transition-transform duration-500" />
                   <img

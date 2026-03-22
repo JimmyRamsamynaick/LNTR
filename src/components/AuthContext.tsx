@@ -13,6 +13,7 @@ export interface DiscordUser {
   status?: string
   bio?: string
   bannerColor?: string
+  bannerUrl?: string
   displayNameColor?: string
   premium_tier?: number // 0: none, 1: Eclat, 2: Lanterne, 3: Eternel
 }
@@ -50,6 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status: memberData.status || user.status,
           bio: memberData.bio || user.bio,
           bannerColor: memberData.banner_color || user.bannerColor,
+          bannerUrl: memberData.banner_url || user.bannerUrl,
           displayNameColor: memberData.display_name_color || user.displayNameColor,
           premium_tier: memberData.premium_tier || 0
         }
@@ -138,6 +140,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status: updatedUser.status || 'online',
           bio: updatedUser.bio || '',
           banner_color: updatedUser.bannerColor || '#1a1a1a',
+          banner_url: updatedUser.bannerUrl || null,
           display_name_color: updatedUser.displayNameColor || '#FFFFFF',
           premium_tier: updatedUser.premium_tier || 0,
           last_seen: new Date().toISOString()
@@ -218,6 +221,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         status: memberData?.status || 'online',
         bio: memberData?.bio,
         bannerColor: memberData?.banner_color,
+        bannerUrl: memberData?.banner_url,
         displayNameColor: memberData?.display_name_color,
         premium_tier: memberData?.premium_tier || 0
       }
