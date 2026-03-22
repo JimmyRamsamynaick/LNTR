@@ -38,7 +38,7 @@ const ProfileSettings: React.FC = () => {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`
       
       // We upload directly to the bucket root
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('banners')
         .upload(fileName, file, {
           upsert: true
@@ -275,26 +275,33 @@ const ProfileSettings: React.FC = () => {
                         <div className="relative">
                           <input
                             type="file"
-                            ref={fileInputRef}
+                            id="banner-upload-input"
                             className="hidden"
                             accept="image/*"
                             onChange={handleFileUpload}
                           />
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               if (!hasPackLanterne) {
                                 alert("L'upload de bannière est réservé au Pack Lanterne !")
                                 return
                               }
-                              fileInputRef.current?.click()
+                              console.log('Button clicked, triggering input...');
+                              const input = document.getElementById('banner-upload-input') as HTMLInputElement;
+                              if (input) {
+                                input.value = ''; // Reset to allow same file re-upload
+                                input.click();
+                              }
                             }}
                             disabled={uploading}
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all ${
                               uploading 
                                 ? 'bg-amber-500/20 text-amber-500 cursor-wait' 
                                 : hasPackLanterne 
-                                  ? 'bg-amber-500 text-black hover:bg-amber-400 cursor-pointer' 
+                                  ? 'bg-amber-500 text-black hover:bg-amber-400 cursor-pointer active:scale-95' 
                                   : 'bg-white/5 text-gray-500 cursor-not-allowed'
                             }`}
                           >
