@@ -54,9 +54,17 @@ const Members: React.FC = () => {
 
     fetchMembers()
     
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchMembers, 30000)
-    return () => clearInterval(interval)
+    // Refresh with Realtime
+    const channel = supabase
+      .channel('members-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => {
+        fetchMembers()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const filteredMembers = useMemo(() => {

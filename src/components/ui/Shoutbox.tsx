@@ -105,7 +105,7 @@ const Shoutbox: React.FC = () => {
         </div>
         <div>
           <h3 className="font-bold text-sm uppercase tracking-widest">Les Murmures</h3>
-          <p className="text-[10px] text-gray-500 font-light italic">"Laissez votre trace dans l'obscurité."</p>
+          <p className="text-[10px] text-gray-500 font-light italic">"Chat global en temps réel avec tous les membres."</p>
         </div>
       </div>
 

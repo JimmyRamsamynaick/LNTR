@@ -214,7 +214,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         )
         roles = guildMemberResponse.data.roles
       } catch (e) {
-        console.warn('Could not fetch guild roles - maybe user is not in guild yet')
+        console.error('User not in guild or error fetching roles:', e)
+        // Rediriger vers une erreur ou afficher un message
+        alert("Accès refusé : Vous devez être membre du serveur Discord La Lanterne Nocturne pour accéder au site.")
+        throw new Error('NOT_IN_GUILD')
       }
 
       // Get existing profile from Supabase to preserve custom data

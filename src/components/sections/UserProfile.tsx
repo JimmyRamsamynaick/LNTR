@@ -728,7 +728,7 @@ const UserProfile: React.FC = () => {
                                     handleDeleteComment(comment.id)
                                   }
                                 }}
-                                className="text-xs text-red-500 font-bold hover:text-white flex items-center gap-1 transition-all bg-red-500/20 hover:bg-red-600 px-3 py-1.5 rounded-lg relative z-50 pointer-events-auto"
+                                className="text-xs text-red-500 font-bold hover:text-white flex items-center gap-1 transition-all bg-red-500/10 hover:bg-red-600 px-3 py-1.5 rounded-lg pointer-events-auto"
                               >
                                 <LucideTrash2 size={14} /> Supprimer
                               </button>
