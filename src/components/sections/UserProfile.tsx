@@ -720,8 +720,11 @@ const UserProfile: React.FC = () => {
                             )}
                             {(currentUser?.id === comment.userId || currentUser?.id === id || isCurrentUserStaff) && (
                               <button 
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className="text-xs text-red-500/70 hover:text-red-500 flex items-center gap-1 transition-colors bg-red-500/10 px-2 py-1 rounded-md"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  handleDeleteComment(comment.id)
+                                }}
+                                className="text-xs text-red-500/70 hover:text-red-500 flex items-center gap-1 transition-colors bg-red-500/10 px-2 py-1 rounded-md relative z-30"
                               >
                                 <LucideTrash2 size={14} /> Supprimer
                               </button>
