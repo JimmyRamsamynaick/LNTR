@@ -20,6 +20,7 @@ create table if not exists public.members (
     banner_url text,
     display_name_color text default '#FFFFFF',
     premium_tier integer default 0,
+    premium_since timestamp with time zone,
     incognito_mode boolean default false,
     gold_nickname boolean default true,
     flames_count integer default 0,

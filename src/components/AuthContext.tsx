@@ -17,6 +17,7 @@ export interface DiscordUser {
   bannerUrl?: string
   displayNameColor?: string
   premium_tier?: number // 0: none, 1: Eclat, 2: Lanterne, 3: Eternel
+  premium_since?: string
   incognito_mode?: boolean
   gold_nickname?: boolean
   flames_count?: number
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bannerUrl: memberData.banner_url || user.bannerUrl,
           displayNameColor: memberData.display_name_color || user.displayNameColor,
           premium_tier: memberData.premium_tier || 0,
+          premium_since: memberData.premium_since,
           incognito_mode: memberData.incognito_mode || false,
           gold_nickname: memberData.gold_nickname !== false, // default true
           flames_count: memberData.flames_count || 0
@@ -153,6 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           banner_url: updatedUser.bannerUrl || null,
           display_name_color: updatedUser.displayNameColor || '#FFFFFF',
           premium_tier: updatedUser.premium_tier || 0,
+          premium_since: updatedUser.premium_since || null,
           incognito_mode: updatedUser.incognito_mode || false,
           gold_nickname: updatedUser.gold_nickname !== false,
           last_seen: new Date().toISOString()
@@ -177,6 +180,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: userData.avatar,
           roles: userData.roles,
           status: userData.status || 'online',
+          premium_tier: userData.premium_tier || 0,
+          premium_since: userData.premium_since || null,
           last_seen: new Date().toISOString()
         })
       if (error) {
@@ -234,6 +239,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .eq('id', userResponse.data.id)
         .single()
 
+      // Determine premium tier from roles
+      let premium_tier = 0
+      if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ETERNEL)) premium_tier = 3
+      else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_LANTERNE)) premium_tier = 2
+      else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ECLAT)) premium_tier = 1
+
       const userData: DiscordUser = {
         ...userResponse.data,
         roles: roles,
@@ -242,7 +253,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bannerColor: memberData?.banner_color,
         bannerUrl: memberData?.banner_url,
         displayNameColor: memberData?.display_name_color,
-        premium_tier: memberData?.premium_tier || 0
+        premium_tier: premium_tier || memberData?.premium_tier || 0,
+        premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : null)
       }
 
       setUser(userData)

@@ -41,11 +41,20 @@ const timeline = [
 const History: React.FC = () => {
   const [legendaryDonors, setLegendaryDonors] = useState<any[]>([])
 
+  const calculateMonths = (since: string) => {
+    if (!since) return 1
+    const startDate = new Date(since)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - startDate.getTime())
+    const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44))
+    return diffMonths || 1
+  }
+
   useEffect(() => {
     const fetchLegendaryDonors = async () => {
       const { data } = await supabase
         .from('members')
-        .select('id, username, avatar, premium_tier, display_name_color')
+        .select('id, username, avatar, premium_tier, premium_since, display_name_color')
         .eq('premium_tier', 3)
       if (data) setLegendaryDonors(data)
     }
@@ -150,9 +159,12 @@ const History: React.FC = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-8">
               <LucideCrown size={12} />
-              Remerciements Éternels
+              Membres de Légende
             </div>
-            <h2 className="text-4xl font-serif font-bold text-white mb-12">Donateurs de Légende</h2>
+            <h2 className="text-4xl font-serif font-bold text-white mb-4">Ceux qui gravent l'histoire</h2>
+            <p className="text-gray-500 max-w-2xl mx-auto mb-12 font-light italic">
+              "Un immense merci à nos piliers qui soutiennent la Lanterne et permettent à sa lueur de briller chaque jour davantage."
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {legendaryDonors.map((donor) => (
                 <div key={donor.id} className="group">
@@ -171,7 +183,7 @@ const History: React.FC = () => {
                     </div>
                   </div>
                   <h4 className="nickname-golden-animated text-sm font-bold truncate px-2">{donor.username}</h4>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Veilleur Éternel</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Soutien depuis {calculateMonths(donor.premium_since)} mois</p>
                 </div>
               ))}
             </div>
