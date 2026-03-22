@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { LucideFlame, LucideSparkles, LucideMoon, LucideCompass, LucideHistory, LucideCrown, LucideStar } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -54,9 +55,26 @@ const History: React.FC = () => {
     const fetchLegendaryDonors = async () => {
       const { data } = await supabase
         .from('members')
-        .select('id, username, avatar, premium_tier, premium_since, display_name_color')
+        .select('*')
         .eq('premium_tier', 3)
-      if (data) setLegendaryDonors(data)
+      if (data) {
+        const mappedData = data.map(m => ({
+          id: m.id,
+          username: m.username,
+          avatar: m.avatar,
+          roles: m.roles || [],
+          status: m.status as any,
+          bio: m.bio,
+          bannerColor: m.banner_color,
+          bannerUrl: m.banner_url,
+          displayNameColor: m.display_name_color,
+          premium_tier: m.premium_tier,
+          premium_since: m.premium_since,
+          gold_nickname: m.gold_nickname !== false,
+          flames_count: m.flames_count || 0
+        }))
+        setLegendaryDonors(mappedData)
+      }
     }
     fetchLegendaryDonors()
   }, [])
@@ -167,7 +185,12 @@ const History: React.FC = () => {
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {legendaryDonors.map((donor) => (
-                <div key={donor.id} className="group">
+                <Link 
+                  key={donor.id} 
+                  to={`/profile/${donor.id}`}
+                  state={{ memberData: donor }}
+                  className="group flex flex-col items-center hover:scale-105 transition-transform duration-300"
+                >
                   <div className="relative mb-4 inline-block">
                     <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <img 
@@ -182,9 +205,9 @@ const History: React.FC = () => {
                       <LucideStar size={12} fill="currentColor" />
                     </div>
                   </div>
-                  <h4 className="nickname-golden-animated text-sm font-bold truncate px-2">{donor.username}</h4>
+                  <h4 className="nickname-golden-animated text-sm font-bold truncate px-2 w-full text-center">{donor.username}</h4>
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Soutien depuis {calculateMonths(donor.premium_since)} mois</p>
-                </div>
+                </Link>
               ))}
             </div>
           </motion.div>
