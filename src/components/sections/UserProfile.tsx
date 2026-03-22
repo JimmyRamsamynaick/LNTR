@@ -385,25 +385,30 @@ const UserProfile: React.FC = () => {
               >
                 {member.username}
               </h2>
-              {member.custom_status && (
-                <p className="text-gray-500 italic text-sm mb-4 relative z-10">"{member.custom_status}"</p>
-              )}
               
-              <div className="flex flex-wrap justify-center gap-2 mb-8 relative z-10">
-                {userBadges.length > 0 ? (
-                  userBadges.map((badge, idx) => (
-                    <div key={idx} className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[10px] font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(255,170,0,0.1)]`}>
-                      <badge.icon size={12} />
-                      {badge.label}
-                    </div>
-                  ))
-                ) : (
-                  <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-gray-500 text-sm font-bold uppercase tracking-wider">
-                    <LucideUsers size={16} />
+              {/* Badges Display under Username */}
+              <div className="flex flex-wrap justify-center gap-1.5 mb-4 relative z-10 px-2">
+                {userBadges.map((badge, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[9px] font-bold uppercase tracking-wider shadow-sm hover:scale-105 transition-transform cursor-default`}
+                    title={badge.label}
+                  >
+                    <badge.icon size={10} />
+                    {badge.label}
+                  </div>
+                ))}
+                {userBadges.length === 0 && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-500 text-[9px] font-bold uppercase tracking-wider">
+                    <LucideUsers size={10} />
                     Membre
                   </div>
                 )}
               </div>
+
+              {member.custom_status && (
+                <p className="text-gray-500 italic text-sm mb-4 relative z-10 px-4">"{member.custom_status}"</p>
+              )}
               
               {/* Status Text */}
               <div className="mb-6 flex justify-center">
