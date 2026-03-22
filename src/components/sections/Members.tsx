@@ -18,9 +18,14 @@ const roleConfig = [
 ]
 
 const Members: React.FC = () => {
-  const [connectedMembers, setConnectedMembers] = useState<DiscordUser[]>([])
+  // Charger les membres depuis le cache local immédiatement pour un affichage instantané
+  const [connectedMembers, setConnectedMembers] = useState<DiscordUser[]>(() => {
+    const cached = localStorage.getItem('cached_members')
+    return cached ? JSON.parse(cached) : []
+  })
   const [searchQuery, setSearchQuery] = useState('')
   const [filterTier, setFilterTier] = useState<number | 'all'>('all')
+  const [loading, setLoading] = useState(connectedMembers.length === 0)
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -46,9 +51,13 @@ const Members: React.FC = () => {
             premium_tier: m.premium_tier || 0
           }))
           setConnectedMembers(mappedMembers)
+          // Mettre à jour le cache local
+          localStorage.setItem('cached_members', JSON.stringify(mappedMembers))
         }
       } catch (e) {
         console.error('Failed to fetch members:', e)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -155,87 +164,102 @@ const Members: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <AnimatePresence mode="popLayout">
-            {filteredMembers.map((m) => {
-            const badges = getMemberBadges(m)
-            const isStaff = m.roles.some(roleId => [
-              DISCORD_CONFIG.ROLES.OWNER,
-              DISCORD_CONFIG.ROLES.CO_OWNER,
-              DISCORD_CONFIG.ROLES.ADMIN,
-              DISCORD_CONFIG.ROLES.STAFF
-            ].includes(roleId))
-            const isEternel = isStaff || (m.premium_tier || 0) >= 3
+          {loading && connectedMembers.length === 0 ? (
+            // Squelette de chargement
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-64 rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
+            ))
+          ) : filteredMembers.length > 0 ? (
+            <AnimatePresence mode="popLayout">
+              {filteredMembers.map((m) => {
+                const badges = getMemberBadges(m)
+                const isStaff = m.roles.some(roleId => [
+                  DISCORD_CONFIG.ROLES.OWNER,
+                  DISCORD_CONFIG.ROLES.CO_OWNER,
+                  DISCORD_CONFIG.ROLES.ADMIN,
+                  DISCORD_CONFIG.ROLES.STAFF
+                ].includes(roleId))
+                const isEternel = isStaff || (m.premium_tier || 0) >= 3
 
-            return (
-              <motion.div
-                key={m.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Link 
-                  to={`/profile/${m.id}`}
-                  className="rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl flex flex-col h-full"
-                >
-                  {/* Banner Area */}
-                  <div className="h-20 w-full relative overflow-hidden">
-                    {m.bannerUrl ? (
-                      <img 
-                        src={m.bannerUrl} 
-                        className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
-                        alt="Banner"
-                      />
-                    ) : (
-                      <div 
-                        className="w-full h-full opacity-30 group-hover:opacity-50 transition-opacity" 
-                        style={{ backgroundColor: m.bannerColor || '#1a1a1a' }}
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-night-900/50" />
-                  </div>
-
-                  <div className="px-6 pb-6 -mt-10 flex flex-col items-center text-center relative z-10">
-                    <div className="relative mb-4">
-                      <img 
-                        src={m.avatar 
-                          ? `https://cdn.discordapp.com/avatars/${m.id}/${m.avatar}.png?size=128`
-                          : `https://cdn.discordapp.com/embed/avatars/${parseInt(m.id) % 5}.png`
-                        }
-                        alt={m.username}
-                        className="w-20 h-20 rounded-full border-4 border-night-900 group-hover:border-amber-500/50 transition-colors shadow-2xl bg-night-900"
-                      />
-                      <StatusIndicator userId={m.id} className="absolute bottom-1 right-1" />
-                    </div>
-
-                    <h3 
-                      className={`font-bold text-lg mb-1 group-hover:text-amber-500 transition-colors truncate w-full ${isEternel ? 'nickname-golden-animated' : ''}`} 
-                      style={{ 
-                        color: isEternel ? 'transparent' : (m.displayNameColor || '#FFFFFF'),
-                        WebkitTextFillColor: isEternel ? 'transparent' : 'initial'
-                      }}
+                return (
+                  <motion.div
+                    key={m.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link 
+                      to={`/profile/${m.id}`}
+                      className="rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl flex flex-col h-full"
                     >
-                      {m.username}
-                    </h3>
-                    {m.custom_status && (
-                      <p className="text-[10px] text-gray-500 italic mb-4 line-clamp-1">"{m.custom_status}"</p>
-                    )}
-                    
-                    <div className="flex flex-wrap justify-center gap-1.5 mt-auto">
-                      {badges.map((badge, idx) => (
-                        <div key={idx} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[9px] font-bold uppercase tracking-wider`}>
-                          <badge.icon size={10} />
-                          {badge.label}
+                      {/* Banner Area */}
+                      <div className="h-20 w-full relative overflow-hidden">
+                        {m.bannerUrl ? (
+                          <img 
+                            src={m.bannerUrl} 
+                            className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
+                            alt="Banner"
+                          />
+                        ) : (
+                          <div 
+                            className="w-full h-full opacity-30" 
+                            style={{ backgroundColor: m.bannerColor || '#1a1a1a' }}
+                          />
+                        )}
+                      </div>
+
+                      <div className="px-6 pb-8 pt-10 relative flex-1 flex flex-col items-center">
+                        {/* Avatar */}
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+                          <div className="relative group-hover:scale-110 transition-transform duration-500">
+                            <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <img
+                              src={m.avatar 
+                                ? `https://cdn.discordapp.com/avatars/${m.id}/${m.avatar}.png?size=128`
+                                : `https://cdn.discordapp.com/embed/avatars/${parseInt(m.id) % 5}.png`
+                              }
+                              alt={m.username}
+                              className="w-20 h-20 rounded-full border-4 border-night-900 relative z-10 shadow-2xl"
+                            />
+                            <StatusIndicator 
+                              userId={m.id} 
+                              size="sm"
+                              className="absolute bottom-1 right-1 z-20 border-2 border-night-900" 
+                            />
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            )
-          })}
-          </AnimatePresence>
+
+                        <h3 
+                          className={`text-lg font-bold mb-4 text-center truncate w-full ${isEternel ? 'nickname-golden-animated' : 'text-white'}`}
+                        >
+                          {m.username}
+                        </h3>
+
+                        <div className="flex flex-wrap justify-center gap-1.5 mt-auto">
+                          {badges.slice(0, 3).map((badge, idx) => (
+                            <div 
+                              key={idx} 
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[8px] font-bold uppercase tracking-wider`}
+                            >
+                              <badge.icon size={8} />
+                              {badge.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          ) : (
+            <div className="col-span-full py-20 text-center">
+              <LucideUsers size={48} className="mx-auto mb-4 text-gray-700" />
+              <p className="text-gray-500 italic">Aucun veilleur ne correspond à ta recherche...</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
