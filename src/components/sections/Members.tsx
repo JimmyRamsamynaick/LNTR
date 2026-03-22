@@ -192,6 +192,7 @@ const Members: React.FC = () => {
                   >
                     <Link 
                       to={`/profile/${m.id}`}
+                      state={{ memberData: m }}
                       className="rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl flex flex-col h-full"
                     >
                       {/* Banner Area */}

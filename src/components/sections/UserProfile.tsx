@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare } from 'lucide-react'
 import { DISCORD_CONFIG } from '../../lib/discord'
@@ -30,9 +30,23 @@ const roleConfig = [
 const UserProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user: currentUser } = useAuth()
-  const [member, setMember] = useState<DiscordUser | null>(null)
-  const [comments, setComments] = useState<Comment[]>([])
+  
+  // 1. Initialiser avec les données passées par le Link state (instantané)
+  // 2. Sinon charger depuis le cache local
+  const [member, setMember] = useState<DiscordUser | null>(() => {
+    if (location.state?.memberData) return location.state.memberData
+    const cached = localStorage.getItem(`profile_${id}`)
+    return cached ? JSON.parse(cached) : null
+  })
+
+  // Charger les commentaires depuis le cache
+  const [comments, setComments] = useState<Comment[]>(() => {
+    const cached = localStorage.getItem(`comments_${id}`)
+    return cached ? JSON.parse(cached) : []
+  })
+
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
@@ -52,7 +66,7 @@ const UserProfile: React.FC = () => {
 
         if (error) throw error
         if (data) {
-          setMember({
+          const userData = {
             id: data.id,
             username: data.username,
             avatar: data.avatar,
@@ -64,7 +78,9 @@ const UserProfile: React.FC = () => {
             premium_tier: data.premium_tier,
             bannerUrl: data.banner_url,
             flames_count: data.flames_count || 0
-          })
+          }
+          setMember(userData)
+          localStorage.setItem(`profile_${id}`, JSON.stringify(userData))
         }
       } catch (e) {
         console.error('Failed to fetch member:', e)
@@ -128,12 +144,10 @@ const UserProfile: React.FC = () => {
             }))
           }))
           setComments(mappedComments)
+          localStorage.setItem(`comments_${id}`, JSON.stringify(mappedComments))
         }
       } catch (e) {
         console.error('Failed to fetch comments:', e)
-        // Fallback to local storage if table doesn't exist yet
-        const allComments = JSON.parse(localStorage.getItem(`comments_${id}`) || '[]')
-        setComments(allComments)
       }
     }
 
