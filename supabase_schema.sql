@@ -84,8 +84,9 @@ create table if not exists public.private_messages (
 -- 3. FONCTIONS DE SÉCURITÉ ET UTILITAIRES
 
 -- On supprime d'abord si elles existent pour éviter les erreurs
-drop function if exists public.check_if_staff(text);
-drop function if exists public.increment_flames(text);
+-- On utilise CASCADE car des politiques RLS en dépendent
+drop function if exists public.check_if_staff(text) cascade;
+drop function if exists public.increment_flames(text) cascade;
 
 -- Fonction: Vérifier si un utilisateur est Staff/Admin
 create or replace function public.check_if_staff(user_id_param text)
