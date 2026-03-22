@@ -15,7 +15,6 @@ const ProfileSettings: React.FC = () => {
   const [displayNameColor, setDisplayNameColor] = useState('#FFFFFF')
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

@@ -38,6 +38,7 @@ const Members: React.FC = () => {
             status: m.status as any,
             bio: m.bio,
             bannerColor: m.banner_color,
+            bannerUrl: m.banner_url,
             displayNameColor: m.display_name_color,
             premium_tier: m.premium_tier || 0
           }))
@@ -109,11 +110,26 @@ const Members: React.FC = () => {
               <Link 
                 key={m.id} 
                 to={`/profile/${m.id}`}
-                className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl"
+                className="rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl flex flex-col"
               >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="flex flex-col items-center text-center">
+                {/* Banner Area */}
+                <div className="h-20 w-full relative overflow-hidden">
+                  {m.bannerUrl ? (
+                    <img 
+                      src={m.bannerUrl} 
+                      className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
+                      alt="Banner"
+                    />
+                  ) : (
+                    <div 
+                      className="w-full h-full opacity-30 group-hover:opacity-50 transition-opacity" 
+                      style={{ backgroundColor: m.bannerColor || '#1a1a1a' }}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-night-900/50" />
+                </div>
+
+                <div className="px-6 pb-6 -mt-10 flex flex-col items-center text-center relative z-10">
                   <div className="relative mb-4">
                     <img 
                       src={m.avatar 
@@ -121,7 +137,7 @@ const Members: React.FC = () => {
                         : `https://cdn.discordapp.com/embed/avatars/${parseInt(m.id) % 5}.png`
                       }
                       alt={m.username}
-                      className="w-20 h-20 rounded-full border-2 border-white/10 group-hover:border-amber-500/50 transition-colors shadow-2xl"
+                      className="w-20 h-20 rounded-full border-4 border-night-900 group-hover:border-amber-500/50 transition-colors shadow-2xl bg-night-900"
                     />
                     <StatusIndicator userId={m.id} className="absolute bottom-1 right-1" />
                   </div>

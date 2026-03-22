@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LucideZap, LucideCrown, LucideCheck, LucideSparkles, LucideFlame, LucideStar, LucideX, LucidePartyPopper } from 'lucide-react'
+import { LucideZap, LucideCrown, LucideCheck, LucideSparkles, LucideFlame, LucideStar, LucideX, LucidePartyPopper, LucideCreditCard } from 'lucide-react'
 
 const packs = [
   {
@@ -31,7 +31,7 @@ const packs = [
     popular: true,
     features: [
       'Tout le Pack Éclat',
-      'Bannière de profil personnalisée',
+      'Bannière de profil personnalisée (Image)',
       'Badge "Lumière Royale" exclusif',
       'Accès anticipé aux nouveautés'
     ]
@@ -47,7 +47,8 @@ const packs = [
     bgColor: 'bg-yellow-500/10',
     features: [
       'Tout le Pack Lanterne',
-      'Badge "Poussière d\'Étoile" légendaire',
+      'Bannière animée (Support des GIFs)',
+      'Système de vue de profil (10 derniers)',
       'Pseudo doré et animé sur le site',
       'Membre de légende (Page Histoire)'
     ]
@@ -62,6 +63,11 @@ const Shop: React.FC = () => {
     setSelectedPack(pack)
     setShowSuccess(true)
   }
+
+  const paymentLinks = [
+    { name: 'PayPal', url: 'https://www.paypal.me/JimmyRamsamynaick', color: 'bg-[#003087]', icon: LucideCreditCard },
+    { name: 'Revolut', url: 'https://revolut.me/jramsamynaick05', color: 'bg-black', icon: LucideZap }
+  ]
 
   return (
     <div className="min-h-screen pt-32 pb-20 px-6 md:px-12 bg-night-900 text-white relative overflow-hidden">
@@ -180,32 +186,45 @@ const Shop: React.FC = () => {
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Merci pour votre soutien !</h2>
               <p className="text-xl text-amber-500 font-bold mb-8 uppercase tracking-widest">Activation du {selectedPack?.name || 'Pack'}</p>
               
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-10 text-left space-y-6">
-                <h3 className="text-lg font-bold flex items-center gap-3 text-white">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-10 text-left">
+                <h3 className="text-lg font-bold flex items-center gap-3 text-white mb-6">
                   <LucideFlame size={20} className="text-amber-500" />
-                  Comment ça marche maintenant ?
+                  Choisissez votre moyen de paiement :
                 </h3>
-                <ol className="space-y-4 text-gray-400">
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  {paymentLinks.map((link) => (
+                    <a
+                      key={link.name}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex items-center justify-center gap-3 p-4 rounded-2xl ${link.color} text-white font-bold hover:scale-105 transition-all shadow-lg`}
+                    >
+                      <link.icon size={20} />
+                      Payer via {link.name}
+                    </a>
+                  ))}
+                </div>
+
+                <div className="space-y-4 text-gray-400 text-sm border-t border-white/10 pt-6">
+                  <p className="font-bold text-white mb-2">Après le paiement :</p>
                   <li className="flex gap-4">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold shrink-0">1</span>
-                    <p>Votre paiement est traité en toute sécurité via notre plateforme partenaire.</p>
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-black text-[10px] font-bold shrink-0">1</span>
+                    <p>Vous recevez votre grade sur le serveur Discord.</p>
                   </li>
                   <li className="flex gap-4">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold shrink-0">2</span>
-                    <p>Vous recevez automatiquement votre grade sur le serveur Discord de la Lanterne.</p>
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-black text-[10px] font-bold shrink-0">2</span>
+                    <p>Reconnectez-vous au site pour activer vos avantages.</p>
                   </li>
-                  <li className="flex gap-4">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold shrink-0">3</span>
-                    <p>Reconnectez-vous au site pour synchroniser vos nouveaux avantages VIP (couleurs, badges, bannières).</p>
-                  </li>
-                </ol>
+                </div>
               </div>
 
               <button 
                 onClick={() => setShowSuccess(false)}
-                className="px-12 py-4 bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,170,0,0.3)]"
+                className="px-12 py-4 bg-white/5 text-gray-400 font-bold rounded-full hover:bg-white/10 transition-all"
               >
-                C'est génial, j'ai compris !
+                Fermer la fenêtre
               </button>
             </motion.div>
           </div>
