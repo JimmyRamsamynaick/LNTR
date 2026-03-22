@@ -165,9 +165,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const saveMemberToHistory = async (userData: DiscordUser) => {
-    // Supprimé car on utilise Supabase maintenant
     try {
-      await supabase
+      const { error } = await supabase
         .from('members')
         .upsert({ 
           id: userData.id, 
@@ -177,8 +176,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status: userData.status || 'online',
           last_seen: new Date().toISOString()
         })
+      if (error) {
+        console.error('Supabase member save failed:', error)
+      } else {
+        console.log('Member successfully saved to Supabase')
+      }
     } catch (e) {
-      console.error('Supabase member save failed:', e)
+      console.error('Supabase member save exception:', e)
     }
   }
 
@@ -240,7 +244,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setUser(userData)
       localStorage.setItem('discord_user', JSON.stringify(userData))
-      saveMemberToHistory(userData)
+      
+      // On attend l'enregistrement pour être sûr
+      await saveMemberToHistory(userData)
+      
+      setLoading(false)
     } catch (error) {
       console.error('Failed to authenticate with Discord:', error)
       throw error

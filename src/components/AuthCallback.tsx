@@ -11,7 +11,10 @@ const AuthCallback: React.FC = () => {
     const code = searchParams.get('code')
     if (code) {
       handleCallback(code)
-        .then(() => navigate('/dashboard'))
+        .then(() => {
+          // On force un rechargement pour être sûr que tout l'état React est propre
+          window.location.href = '/dashboard'
+        })
         .catch(() => navigate('/'))
     } else {
       navigate('/')

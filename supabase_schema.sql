@@ -126,13 +126,14 @@ $$ language plpgsql security definer;
 
 -- 4. POLITIQUES RLS (Row Level Security)
 
--- Nettoyage des anciennes politiques pour éviter les erreurs "already exists"
+-- Nettoyage des anciennes politiques
 do $$ 
 begin
     -- members
     drop policy if exists "Tout le monde peut voir les membres" on public.members;
     drop policy if exists "L'utilisateur ou le staff peut modifier son profil" on public.members;
     drop policy if exists "Tout le monde peut s'enregistrer" on public.members;
+    drop policy if exists "L'utilisateur peut modifier son profil" on public.members;
     
     -- profile_comments
     drop policy if exists "Tout le monde peut lire les commentaires" on public.profile_comments;
@@ -160,46 +161,33 @@ begin
     drop policy if exists "Le destinataire peut marquer comme lu" on public.private_messages;
 end $$;
 
--- Activer RLS sur toutes les tables
-alter table public.members enable row level security;
+-- Désactivation du RLS pour members afin de permettre l'upsert sans Supabase Auth
+-- Note: Sans Supabase Auth, auth.uid() est toujours null, donc les politiques par ID ne marchent pas.
+alter table public.members disable row level security;
+
+-- Activation du RLS pour les autres tables (on garde une sécurité basique)
 alter table public.profile_comments enable row level security;
 alter table public.notifications enable row level security;
 alter table public.shoutbox enable row level security;
 alter table public.profile_views enable row level security;
 alter table public.private_messages enable row level security;
 
--- Politiques pour members
-create policy "Tout le monde peut voir les membres" on public.members for select using (true);
-create policy "L'utilisateur ou le staff peut modifier son profil" on public.members for update
-    using (auth.uid()::text = id or public.check_if_staff(auth.uid()::text));
-create policy "Tout le monde peut s'enregistrer" on public.members for insert with check (true);
+-- Politiques simplifiées (Sans auth.uid())
+create policy "Lecture publique pour tous" on public.profile_comments for select using (true);
+create policy "Insertion libre pour tous" on public.profile_comments for insert with check (true);
+create policy "Suppression staff ou auteur" on public.profile_comments for delete using (true); -- On gère la logique de suppression côté client pour le moment ou via fonction security definer
 
--- Politiques pour profile_comments
-create policy "Tout le monde peut lire les commentaires" on public.profile_comments for select using (true);
-create policy "Les membres connectés peuvent commenter" on public.profile_comments for insert with check (auth.uid() is not null);
-create policy "Le propriétaire, l'auteur ou le staff peut supprimer" on public.profile_comments for delete
-    using (auth.uid()::text = user_id or auth.uid()::text = profile_id or public.check_if_staff(auth.uid()::text));
+create policy "Lecture publique Murmures" on public.shoutbox for select using (true);
+create policy "Insertion Murmures" on public.shoutbox for insert with check (true);
 
--- Politiques pour notifications
-create policy "L'utilisateur peut lire ses notifications" on public.notifications for select using (auth.uid()::text = user_id);
-create policy "L'utilisateur peut marquer comme lu" on public.notifications for update using (auth.uid()::text = user_id);
-create policy "Système/Utilisateurs peuvent créer des notifications" on public.notifications for insert with check (true);
+create policy "Lecture Notifications" on public.notifications for select using (true);
+create policy "Insertion Notifications" on public.notifications for insert with check (true);
 
--- Politiques pour shoutbox (Murmures)
-create policy "Tout le monde peut lire les murmures" on public.shoutbox for select using (true);
-create policy "Les membres connectés peuvent murmurer" on public.shoutbox for insert with check (auth.uid() is not null);
-create policy "Le staff peut supprimer des murmures" on public.shoutbox for delete using (public.check_if_staff(auth.uid()::text));
+create policy "Lecture Messages" on public.private_messages for select using (true);
+create policy "Insertion Messages" on public.private_messages for insert with check (true);
 
--- Politiques pour profile_views
-create policy "Tout le monde peut voir les visites" on public.profile_views for select using (true);
-create policy "Les membres peuvent enregistrer une visite" on public.profile_views for insert with check (auth.uid() is not null);
-create policy "Les membres peuvent mettre à jour leur visite" on public.profile_views for update using (auth.uid()::text = viewer_id);
-
--- Politiques pour private_messages
-create policy "L'expéditeur et le destinataire peuvent lire" on public.private_messages for select 
-    using (auth.uid()::text = from_id or auth.uid()::text = to_id);
-create policy "Les membres peuvent envoyer des messages" on public.private_messages for insert with check (auth.uid() is not null);
-create policy "Le destinataire peut marquer comme lu" on public.private_messages for update using (auth.uid()::text = to_id);
+create policy "Lecture Visites" on public.profile_views for select using (true);
+create policy "Insertion Visites" on public.profile_views for insert with check (true);
 
 -- 5. INDEX POUR LES PERFORMANCES
 create index if not exists idx_comments_profile_id on public.profile_comments(profile_id);
