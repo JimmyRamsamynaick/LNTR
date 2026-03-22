@@ -125,8 +125,8 @@ const ProfileSettings: React.FC = () => {
         custom_status: hasPackEclat ? customStatus : '',
         incognito_mode: hasPackEternel ? incognitoMode : false,
         gold_nickname: hasPackEternel ? goldNickname : false,
-        nicknameGradientColor1: hasPackEternel ? nicknameGradientColor1 : null,
-        nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : null
+        nicknameGradientColor1: hasPackEternel ? nicknameGradientColor1 : undefined,
+        nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : undefined
       })
       setSaved(true)
       setTimeout(() => {

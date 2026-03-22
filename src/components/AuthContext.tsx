@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           nicknameGradientColor1: memberData?.nickname_gradient_color1 || user.nicknameGradientColor1,
           nicknameGradientColor2: memberData?.nickname_gradient_color2 || user.nicknameGradientColor2,
           premium_tier: premium_tier || memberData?.premium_tier || 0,
-          premium_since: memberData?.premium_since || (premium_tier > 0 ? (user.premium_since || new Date().toISOString()) : null),
+          premium_since: memberData?.premium_since || (premium_tier > 0 ? (user.premium_since || new Date().toISOString()) : undefined),
           incognito_mode: memberData?.incognito_mode || false,
           gold_nickname: memberData?.gold_nickname !== false,
           flames_count: memberData?.flames_count || 0
@@ -306,7 +306,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         nicknameGradientColor1: memberData?.nickname_gradient_color1,
         nicknameGradientColor2: memberData?.nickname_gradient_color2,
         premium_tier: premium_tier || memberData?.premium_tier || 0,
-        premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : null)
+        premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : undefined)
       }
 
       setUser(userData)
