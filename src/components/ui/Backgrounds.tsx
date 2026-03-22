@@ -1,82 +1,52 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '../../lib/utils';
+import React from 'react'
+import { motion } from 'framer-motion'
 
-export const AnimatedGradientBackground: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => {
+const Backgrounds: React.FC = () => {
   return (
-    <div className={cn("relative w-full h-full overflow-hidden bg-night-900", className)}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(87,10,87,0.15),_transparent_70%)] animate-pulse-slow" />
-      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-violet-900/20 to-transparent pointer-events-none" />
-      <div className="relative z-10 w-full h-full">{children}</div>
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-night-900">
+      {/* Deep Ambiance Gradients */}
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(42,31,61,0.2)_0%,_transparent_70%)]" />
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-violet-900/10 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/10 blur-[120px] rounded-full" />
+      
+      {/* Moving Mist / Smoke Effect */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ duration: 3 }}
+        className="absolute inset-0 opacity-40 mix-blend-screen"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 80%)',
+          filter: 'blur(40px)'
+        }}
+      />
+
+      {/* Floating Particles - Hidden on mobile for performance */}
+      <div className="hidden md:block">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: Math.random() * 100 + "%", 
+              y: Math.random() * 100 + "%",
+              opacity: Math.random() * 0.5,
+              scale: Math.random() * 0.5 + 0.5
+            }}
+            animate={{ 
+              y: [null, (Math.random() - 0.5) * 100 + "px"],
+              opacity: [null, Math.random() * 0.3 + 0.1, null],
+            }}
+            transition={{ 
+              duration: Math.random() * 10 + 10, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+            className="absolute w-1 h-1 bg-amber-500 rounded-full blur-[1px]"
+          />
+        ))}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export const ParticlesBackground: React.FC = () => {
-  // Simple static particles with CSS animation
-  const particles = Array.from({ length: 20 }).map((_, i) => ({
-    id: i,
-    top: `${Math.random() * 100}%`,
-    left: `${Math.random() * 100}%`,
-    duration: Math.random() * 10 + 10,
-    delay: Math.random() * 5,
-  }));
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute w-1 h-1 bg-gold-400 rounded-full opacity-20"
-          style={{ top: p.top, left: p.left }}
-          animate={{
-            y: [0, -100],
-            opacity: [0.2, 0],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            delay: p.delay,
-            ease: "linear",
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-export const StarField: React.FC = () => {
-  const stars = Array.from({ length: 50 }).map((_, i) => ({
-    id: i,
-    top: `${Math.random() * 100}%`,
-    left: `${Math.random() * 100}%`,
-    size: Math.random() * 2 + 1,
-    delay: Math.random() * 5,
-  }));
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {stars.map((s) => (
-        <motion.div
-          key={s.id}
-          className="absolute bg-white rounded-full opacity-30"
-          style={{ 
-            top: s.top, 
-            left: s.left, 
-            width: s.size, 
-            height: s.size 
-          }}
-          animate={{
-            opacity: [0.3, 0.8, 0.3],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            delay: s.delay,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-    </div>
-  );
-};
+export default Backgrounds
