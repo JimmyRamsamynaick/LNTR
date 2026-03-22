@@ -145,28 +145,6 @@ const History: React.FC = () => {
           ))}
         </div>
 
-        {/* Closing Section */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="mt-32 p-12 rounded-[3rem] bg-gradient-to-br from-amber-600/20 to-violet-900/20 border border-white/10 text-center backdrop-blur-xl relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
-          <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-8">Et le prochain chapitre ?</h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-12 font-light leading-relaxed">
-            Le prochain chapitre, c'est vous qui l'écrivez en nous rejoignant. La Lanterne Nocturne n'est pas qu'une histoire passée, c'est un futur que nous construisons ensemble chaque nuit.
-          </p>
-          <a 
-            href="https://discord.gg/NnFFAQwmD4"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-10 py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded-full transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,170,0,0.3)]"
-          >
-            Devenir part de l'histoire
-          </a>
-        </motion.div>
-
         {/* Eternal Thanks Section */}
         {legendaryDonors.length > 0 && (
           <motion.div 
@@ -212,6 +190,28 @@ const History: React.FC = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Closing Section */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-32 p-12 rounded-[3rem] bg-gradient-to-br from-amber-600/20 to-violet-900/20 border border-white/10 text-center backdrop-blur-xl relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-8">Et le prochain chapitre ?</h2>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-12 font-light leading-relaxed">
+            Le prochain chapitre, c'est vous qui l'écrivez en nous rejoignant. La Lanterne Nocturne n'est pas qu'une histoire passée, c'est un futur que nous construisons ensemble chaque nuit.
+          </p>
+          <a 
+            href="https://discord.gg/NnFFAQwmD4"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-10 py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded-full transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,170,0,0.3)]"
+          >
+            Devenir part de l'histoire
+          </a>
+        </motion.div>
       </div>
     </div>
   )

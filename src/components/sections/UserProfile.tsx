@@ -366,10 +366,17 @@ const UserProfile: React.FC = () => {
     if (!currentUser || currentUser.id === member.id) return
     
     try {
-      const { error } = await supabase.rpc('increment_flames', { member_id: member.id })
+      const { data, error } = await supabase.rpc('increment_flames', { 
+        member_id: member.id,
+        visitor_id: currentUser.id
+      })
       if (error) throw error
       
-      setMember(prev => prev ? { ...prev, flames_count: (prev.flames_count || 0) + 1 } : null)
+      if (data === true) {
+        setMember(prev => prev ? { ...prev, flames_count: (prev.flames_count || 0) + 1 } : null)
+      } else {
+        alert("Vous avez déjà attribué une flamme à ce membre au cours des dernières 24 heures.")
+      }
     } catch (e) {
       console.error('Failed to light flame:', e)
     }

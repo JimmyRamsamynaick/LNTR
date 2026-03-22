@@ -62,6 +62,14 @@ create table if not exists public.shoutbox (
     created_at timestamp with time zone default now()
 );
 
+-- Table: profile_flames (Suivi des flammes pour limite 24h)
+create table if not exists public.profile_flames (
+    from_id text references public.members(id) on delete cascade,
+    to_id text references public.members(id) on delete cascade,
+    last_flame_at timestamp with time zone default now(),
+    primary key (from_id, to_id)
+);
+
 -- Table: profile_views (Visiteurs récents)
 create table if not exists public.profile_views (
     profile_id text references public.members(id) on delete cascade,
@@ -117,13 +125,34 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- Fonction: Incrémenter les flammes (RPC)
-create or replace function public.increment_flames(member_id text)
-returns void as $$
+-- Fonction: Incrémenter les flammes (RPC avec limite 24h)
+create or replace function public.increment_flames(member_id text, visitor_id text)
+returns boolean as $$
+declare
+    last_flame timestamp with time zone;
 begin
-  update public.members
-  set flames_count = coalesce(flames_count, 0) + 1
-  where id = member_id;
+    -- Récupérer la date de la dernière flamme envoyée par ce visiteur à ce membre
+    select last_flame_at into last_flame 
+    from public.profile_flames 
+    where from_id = visitor_id and to_id = member_id;
+
+    -- Si une flamme a été envoyée il y a moins de 24h, on refuse
+    if last_flame is not null and last_flame > (now() - interval '24 hours') then
+        return false;
+    end if;
+
+    -- Mettre à jour ou insérer le suivi de la flamme
+    insert into public.profile_flames (from_id, to_id, last_flame_at)
+    values (visitor_id, member_id, now())
+    on conflict (from_id, to_id) 
+    do update set last_flame_at = now();
+
+    -- Incrémenter le compteur sur le profil du membre
+    update public.members
+    set flames_count = coalesce(flames_count, 0) + 1
+    where id = member_id;
+
+    return true;
 end;
 $$ language plpgsql security definer;
 

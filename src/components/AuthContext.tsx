@@ -44,29 +44,73 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user) return
 
     try {
+      const accessToken = localStorage.getItem('discord_token')
+      if (!accessToken) return
+
+      // 1. Récupérer l'identité actuelle de l'utilisateur sur Discord (pour l'avatar)
+      const userResponse = await axios.get(DISCORD_CONFIG.USER_API, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+
+      // 2. Récupérer les rôles actuels de l'utilisateur sur le serveur
+      let roles: string[] = []
+      try {
+        const guildMemberResponse = await axios.get(
+          `https://discord.com/api/users/@me/guilds/${DISCORD_CONFIG.GUILD_ID}/member`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        )
+        roles = guildMemberResponse.data.roles
+      } catch (e) {
+        console.error('Error fetching roles during refresh:', e)
+        roles = user.roles || []
+      }
+
+      // 3. Récupérer les données du profil depuis Supabase
       const { data: memberData } = await supabase
         .from('members')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (memberData) {
+      if (memberData || userResponse.data) {
+        // Déterminer le premium_tier à partir des rôles
+        let premium_tier = 0
+        if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ETERNEL)) premium_tier = 3
+        else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_LANTERNE)) premium_tier = 2
+        else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ECLAT)) premium_tier = 1
+
         const updatedUser: DiscordUser = {
           ...user,
-          status: memberData.status || user.status,
-          custom_status: memberData.custom_status || user.custom_status,
-          bio: memberData.bio || user.bio,
-          bannerColor: memberData.banner_color || user.bannerColor,
-          bannerUrl: memberData.banner_url || user.bannerUrl,
-          displayNameColor: memberData.display_name_color || user.displayNameColor,
-          premium_tier: memberData.premium_tier || 0,
-          premium_since: memberData.premium_since,
-          incognito_mode: memberData.incognito_mode || false,
-          gold_nickname: memberData.gold_nickname !== false, // default true
-          flames_count: memberData.flames_count || 0
+          username: userResponse.data?.username || user.username,
+          avatar: userResponse.data?.avatar || user.avatar,
+          roles: roles,
+          status: memberData?.status || user.status,
+          custom_status: memberData?.custom_status || user.custom_status,
+          bio: memberData?.bio || user.bio,
+          bannerColor: memberData?.banner_color || user.bannerColor,
+          bannerUrl: memberData?.banner_url || user.bannerUrl,
+          displayNameColor: memberData?.display_name_color || user.displayNameColor,
+          premium_tier: premium_tier || memberData?.premium_tier || 0,
+          premium_since: memberData?.premium_since || (premium_tier > 0 ? (user.premium_since || new Date().toISOString()) : null),
+          incognito_mode: memberData?.incognito_mode || false,
+          gold_nickname: memberData?.gold_nickname !== false,
+          flames_count: memberData?.flames_count || 0
         }
+
         setUser(updatedUser)
         localStorage.setItem('discord_user', JSON.stringify(updatedUser))
+
+        // Mettre à jour Supabase avec les nouvelles infos Discord (avatar/rôles)
+        await supabase
+          .from('members')
+          .update({ 
+            avatar: updatedUser.avatar,
+            roles: updatedUser.roles,
+            premium_tier: updatedUser.premium_tier,
+            premium_since: updatedUser.premium_since,
+            last_seen: new Date().toISOString()
+          })
+          .eq('id', user.id)
       }
     } catch (e) {
       console.error('Failed to refresh user:', e)
