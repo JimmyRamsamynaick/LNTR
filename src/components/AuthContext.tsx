@@ -92,13 +92,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     window.location.href = `${DISCORD_CONFIG.AUTH_URL}?${params.toString()}`
   }
 
-  const logout = async () => {
-    if (user) {
-      await updateStatus('offline')
-    }
+  const logout = () => {
+    // On efface les données immédiatement pour la réactivité
     setUser(null)
     localStorage.removeItem('discord_token')
     localStorage.removeItem('discord_user')
+    
+    // On redirige vers l'accueil
+    window.location.href = '/'
   }
 
   const updateStatus = async (newStatus: DiscordStatus) => {
