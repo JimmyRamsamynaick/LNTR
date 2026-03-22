@@ -327,15 +327,20 @@ const UserProfile: React.FC = () => {
   }
 
   const userBadges = getAllBadges()
-  const isStaff = member.roles.some(roleId => [
+  const isCurrentUserStaff = currentUser?.roles?.some(roleId => [
     DISCORD_CONFIG.ROLES.OWNER,
     DISCORD_CONFIG.ROLES.CO_OWNER,
     DISCORD_CONFIG.ROLES.ADMIN,
     DISCORD_CONFIG.ROLES.STAFF
   ].includes(roleId))
-  const isEternel = isStaff || (member.premium_tier || 0) >= 3
 
-  const handleFlame = async () => {
+  const isMemberStaff = member.roles.some(roleId => [
+    DISCORD_CONFIG.ROLES.OWNER,
+    DISCORD_CONFIG.ROLES.CO_OWNER,
+    DISCORD_CONFIG.ROLES.ADMIN,
+    DISCORD_CONFIG.ROLES.STAFF
+  ].includes(roleId))
+  const isEternel = isMemberStaff || (member.premium_tier || 0) >= 3
     if (!currentUser || currentUser.id === member.id) return
     
     try {
@@ -683,17 +688,21 @@ const UserProfile: React.FC = () => {
                   comments.map((comment) => (
                     <div key={comment.id} className="group">
                       <div className="flex gap-4">
-                        <img
-                          src={comment.avatar 
-                            ? `https://cdn.discordapp.com/avatars/${comment.userId}/${comment.avatar}.png?size=64`
-                            : `https://cdn.discordapp.com/embed/avatars/${parseInt(comment.userId) % 5}.png`
-                          }
-                          alt={comment.username}
-                          className="w-12 h-12 rounded-full border border-white/10"
-                        />
+                        <Link to={`/profile/${comment.userId}`} className="shrink-0">
+                          <img
+                            src={comment.avatar 
+                              ? `https://cdn.discordapp.com/avatars/${comment.userId}/${comment.avatar}.png?size=64`
+                              : `https://cdn.discordapp.com/embed/avatars/${parseInt(comment.userId) % 5}.png`
+                            }
+                            alt={comment.username}
+                            className="w-12 h-12 rounded-full border border-white/10 hover:border-amber-500/50 transition-colors"
+                          />
+                        </Link>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-bold text-amber-500">{comment.username}</h4>
+                            <Link to={`/profile/${comment.userId}`} className="font-bold text-amber-500 hover:text-amber-400 transition-colors">
+                              {comment.username}
+                            </Link>
                             <span className="text-xs text-gray-600">{new Date(comment.timestamp).toLocaleDateString()}</span>
                           </div>
                           <p className="text-gray-300 leading-relaxed mb-4">{comment.content}</p>
@@ -707,10 +716,10 @@ const UserProfile: React.FC = () => {
                                 <LucideReply size={14} /> Répondre
                               </button>
                             )}
-                            {(currentUser?.id === comment.userId || currentUser?.id === id || isStaff) && (
+                            {(currentUser?.id === comment.userId || currentUser?.id === id || isCurrentUserStaff) && (
                               <button 
                                 onClick={() => handleDeleteComment(comment.id)}
-                                className="text-xs text-red-500/50 hover:text-red-500 flex items-center gap-1 transition-colors opacity-0 group-hover:opacity-100"
+                                className="text-xs text-red-500/70 hover:text-red-500 flex items-center gap-1 transition-colors bg-red-500/10 px-2 py-1 rounded-md"
                               >
                                 <LucideTrash2 size={14} /> Supprimer
                               </button>
@@ -722,17 +731,21 @@ const UserProfile: React.FC = () => {
                             <div className="mt-6 ml-4 pl-6 border-l border-white/5 space-y-6">
                               {comment.replies.map((reply) => (
                                 <div key={reply.id} className="flex gap-3">
-                                  <img
-                                    src={reply.avatar 
-                                      ? `https://cdn.discordapp.com/avatars/${reply.userId}/${reply.avatar}.png?size=48`
-                                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(reply.userId) % 5}.png`
-                                    }
-                                    alt={reply.username}
-                                    className="w-8 h-8 rounded-full border border-white/10"
-                                  />
+                                  <Link to={`/profile/${reply.userId}`} className="shrink-0">
+                                    <img
+                                      src={reply.avatar 
+                                        ? `https://cdn.discordapp.com/avatars/${reply.userId}/${reply.avatar}.png?size=48`
+                                        : `https://cdn.discordapp.com/embed/avatars/${parseInt(reply.userId) % 5}.png`
+                                      }
+                                      alt={reply.username}
+                                      className="w-8 h-8 rounded-full border border-white/10 hover:border-amber-500/50 transition-colors"
+                                    />
+                                  </Link>
                                   <div className="flex-1">
                                     <div className="flex items-center justify-between mb-1">
-                                      <h5 className="font-bold text-sm text-amber-500/80">{reply.username}</h5>
+                                      <Link to={`/profile/${reply.userId}`} className="font-bold text-sm text-amber-500/80 hover:text-amber-400 transition-colors">
+                                        {reply.username}
+                                      </Link>
                                       <span className="text-[10px] text-gray-600">{new Date(reply.timestamp).toLocaleDateString()}</span>
                                     </div>
                                     <p className="text-sm text-gray-400">{reply.content}</p>
