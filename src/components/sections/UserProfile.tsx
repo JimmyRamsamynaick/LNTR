@@ -723,9 +723,12 @@ const UserProfile: React.FC = () => {
                               <button 
                                 onClick={(e) => {
                                   e.preventDefault()
-                                  handleDeleteComment(comment.id)
+                                  e.stopPropagation()
+                                  if (window.confirm('Supprimer ce commentaire ?')) {
+                                    handleDeleteComment(comment.id)
+                                  }
                                 }}
-                                className="text-xs text-red-500/70 hover:text-red-500 flex items-center gap-1 transition-colors bg-red-500/10 px-2 py-1 rounded-md relative z-30"
+                                className="text-xs text-red-500 font-bold hover:text-white flex items-center gap-1 transition-all bg-red-500/20 hover:bg-red-600 px-3 py-1.5 rounded-lg relative z-50 pointer-events-auto"
                               >
                                 <LucideTrash2 size={14} /> Supprimer
                               </button>
