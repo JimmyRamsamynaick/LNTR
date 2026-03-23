@@ -21,6 +21,7 @@ create table if not exists public.members (
     display_name_color text default '#FFFFFF',
     nickname_gradient_color1 text,
     nickname_gradient_color2 text,
+    featured_badges jsonb default '[]'::jsonb,
     premium_tier integer default 0,
     premium_since timestamp with time zone,
     incognito_mode boolean default false,

@@ -18,6 +18,7 @@ const ProfileSettings: React.FC = () => {
   const [goldNickname, setGoldNickname] = useState(true)
   const [nicknameGradientColor1, setNicknameGradientColor1] = useState('#FFFFFF')
   const [nicknameGradientColor2, setNicknameGradientColor2] = useState('#FFFFFF')
+  const [featuredBadges, setFeaturedBadges] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
 
@@ -85,6 +86,7 @@ const ProfileSettings: React.FC = () => {
       setGoldNickname(user.gold_nickname !== false)
       setNicknameGradientColor1(user.nicknameGradientColor1 || '#FFFFFF')
       setNicknameGradientColor2(user.nicknameGradientColor2 || '#FFFFFF')
+      setFeaturedBadges(user.featured_badges || [])
     }
   }, [user])
 
@@ -126,7 +128,8 @@ const ProfileSettings: React.FC = () => {
         incognito_mode: hasPackEternel ? incognitoMode : false,
         gold_nickname: hasPackEternel ? goldNickname : false,
         nicknameGradientColor1: hasPackEternel ? nicknameGradientColor1 : undefined,
-        nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : undefined
+        nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : undefined,
+        featured_badges: featuredBadges
       })
       setSaved(true)
       setTimeout(() => {
@@ -555,19 +558,45 @@ const ProfileSettings: React.FC = () => {
               </div>
               <div className="flex flex-wrap gap-4">
                 {[
-                  { icon: LucideFlame, label: "Éclat Nocturne", required: 'hasPackEclat' },
-                  { icon: LucideCrown, label: "Lumière Royale", required: 'hasPackLanterne' },
-                  { icon: LucideSparkles, label: "Poussière d'Étoile", required: 'hasPackEternel' }
+                  { id: 'eclat', icon: LucideFlame, label: "Éclat Nocturne", required: 'hasPackEclat' },
+                  { id: 'lanterne', icon: LucideCrown, label: "Lumière Royale", required: 'hasPackLanterne' },
+                  { id: 'eternel', icon: LucideSparkles, label: "Poussière d'Étoile", required: 'hasPackEternel' }
                 ].map((badge, i) => {
                   const isLocked = badge.required === 'hasPackLanterne' ? !hasPackLanterne : 
                                   badge.required === 'hasPackEternel' ? !hasPackEternel : !hasPackEclat;
+                  const isFeatured = featuredBadges.includes(badge.id);
+
+                  const toggleBadge = () => {
+                    if (isLocked) return;
+                    if (isFeatured) {
+                      setFeaturedBadges(prev => prev.filter(id => id !== badge.id));
+                    } else {
+                      setFeaturedBadges(prev => [...prev, badge.id]);
+                    }
+                  };
+
                   return (
-                    <div key={i} className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all group relative ${isLocked ? 'bg-white/[0.02] border-white/5 opacity-40' : 'bg-white/5 border-white/5 hover:border-amber-500/20 cursor-pointer'}`}>
-                      <badge.icon className={`w-8 h-8 ${isLocked ? 'text-gray-700' : 'text-gray-500 group-hover:text-amber-500'} transition-colors`} />
-                      <span className="text-[10px] uppercase font-bold text-gray-600">{badge.label}</span>
+                    <div 
+                      key={i} 
+                      onClick={toggleBadge}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all group relative ${
+                        isLocked 
+                          ? 'bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed' 
+                          : isFeatured
+                            ? 'bg-amber-500/20 border-amber-500/50 cursor-pointer scale-105 shadow-[0_0_20px_rgba(255,170,0,0.2)]'
+                            : 'bg-white/5 border-white/5 hover:border-amber-500/20 cursor-pointer'
+                      }`}
+                    >
+                      <badge.icon className={`w-8 h-8 ${isLocked ? 'text-gray-700' : isFeatured ? 'text-amber-500' : 'text-gray-500 group-hover:text-amber-500'} transition-colors`} />
+                      <span className={`text-[10px] uppercase font-bold ${isFeatured ? 'text-amber-500' : 'text-gray-600'}`}>{badge.label}</span>
                       {isLocked && (
                         <div className="absolute -top-1 -right-1">
                           <LucideShield size={12} className="text-gray-700" />
+                        </div>
+                      )}
+                      {!isLocked && isFeatured && (
+                        <div className="absolute -top-1 -right-1 bg-amber-500 text-black rounded-full p-0.5">
+                          <LucideCheckCircle size={12} />
                         </div>
                       )}
                     </div>

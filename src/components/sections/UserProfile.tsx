@@ -80,6 +80,7 @@ const UserProfile: React.FC = () => {
             displayNameColor: data.display_name_color,
             nicknameGradientColor1: data.nickname_gradient_color1,
             nicknameGradientColor2: data.nickname_gradient_color2,
+            featured_badges: data.featured_badges || [],
             premium_tier: data.premium_tier,
             gold_nickname: data.gold_nickname !== false,
             bannerUrl: data.banner_url,
@@ -330,12 +331,17 @@ const UserProfile: React.FC = () => {
     
     // Add premium tier badge
     const tiers = [
-      { tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-      { tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
-      { tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
+      { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+      { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
+      { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
     ]
+    
+    // Only add premium badge if it's featured OR if no badges are featured yet
+    const featuredIds = member.featured_badges || []
     const tier = tiers.find(t => t.tier === member.premium_tier)
-    if (tier) badges.push(tier)
+    if (tier && (featuredIds.length === 0 || featuredIds.includes(tier.id))) {
+      badges.push(tier)
+    }
     
     // Add all matching discord roles
     roleConfig.forEach(config => {
@@ -448,7 +454,7 @@ const UserProfile: React.FC = () => {
               </div>
 
               <h2 
-                className={`text-2xl md:text-4xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${hasGoldNickname ? 'nickname-golden-animated' : ''}`} 
+                className={`text-xl md:text-2xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${hasGoldNickname ? 'nickname-golden-animated' : ''}`} 
                 style={{ 
                   background: hasGradientNickname 
                     ? `linear-gradient(to right, ${member.nicknameGradientColor1}, ${member.nicknameGradientColor2})` 

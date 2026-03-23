@@ -319,17 +319,21 @@ const Dashboard: React.FC = () => {
   const isVip = isStaff || isVipOnDiscord || (user?.premium_tier || 0) >= 1
 
   const premiumTiers = [
-    { tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-    { tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
-    { tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
+    { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+    { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
+    { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
   ]
 
   const getAllBadges = () => {
     const badges = []
+    const featuredIds = user?.featured_badges || []
     
     // Add premium tier badge
     const tier = premiumTiers.find(p => p.tier === user?.premium_tier)
-    if (tier) badges.push(tier)
+    // Only add premium badge if it's featured OR if no badges are featured yet
+    if (tier && (featuredIds.length === 0 || featuredIds.includes(tier.id))) {
+      badges.push(tier)
+    }
     
     // Add all matching discord roles
     if (user?.roles) {
@@ -421,7 +425,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 
                 <h2 
-                  className={`text-2xl md:text-3xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
+                  className={`text-xl md:text-2xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
                   style={{ 
                     background: hasGradientNickname 
                       ? `linear-gradient(to right, ${user.nicknameGradientColor1}, ${user.nicknameGradientColor2})` 

@@ -18,6 +18,7 @@ export interface DiscordUser {
   displayNameColor?: string
   nicknameGradientColor1?: string
   nicknameGradientColor2?: string
+  featured_badges?: string[]
   premium_tier?: number // 0: none, 1: Eclat, 2: Lanterne, 3: Eternel
   premium_since?: string
   incognito_mode?: boolean
@@ -94,6 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           displayNameColor: memberData?.display_name_color || user.displayNameColor,
           nicknameGradientColor1: memberData?.nickname_gradient_color1 || user.nicknameGradientColor1,
           nicknameGradientColor2: memberData?.nickname_gradient_color2 || user.nicknameGradientColor2,
+          featured_badges: memberData?.featured_badges || user.featured_badges || [],
           premium_tier: premium_tier || memberData?.premium_tier || 0,
           premium_since: memberData?.premium_since || (premium_tier > 0 ? (user.premium_since || new Date().toISOString()) : undefined),
           incognito_mode: memberData?.incognito_mode || false,
@@ -204,6 +206,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           display_name_color: updatedUser.displayNameColor || '#FFFFFF',
           nickname_gradient_color1: updatedUser.nicknameGradientColor1 || null,
           nickname_gradient_color2: updatedUser.nicknameGradientColor2 || null,
+          featured_badges: updatedUser.featured_badges || [],
           premium_tier: updatedUser.premium_tier || 0,
           premium_since: updatedUser.premium_since || null,
           incognito_mode: updatedUser.incognito_mode || false,
@@ -305,6 +308,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         displayNameColor: memberData?.display_name_color,
         nicknameGradientColor1: memberData?.nickname_gradient_color1,
         nicknameGradientColor2: memberData?.nickname_gradient_color2,
+        featured_badges: memberData?.featured_badges || [],
         premium_tier: premium_tier || memberData?.premium_tier || 0,
         premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : undefined)
       }
