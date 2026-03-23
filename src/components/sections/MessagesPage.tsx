@@ -72,10 +72,18 @@ const MessagesPage: React.FC = () => {
       const { data } = await supabase
         .from('private_messages')
         .select('*')
-        .or(`and(from_id.eq.${user.id},to_id.eq.${selectedChat.id}),and(from_id.eq.${selectedChat.id},to_id.eq.${user.id})`)
+        .or(`from_id.eq.${user.id},from_id.eq.${selectedChat.id}`)
+        .or(`to_id.eq.${user.id},to_id.eq.${selectedChat.id}`)
         .order('created_at', { ascending: true })
       
-      if (data) setChatMessages(data)
+      if (data) {
+        // Double check filter because nested OR/AND can be tricky in Supabase syntax
+        const filtered = data.filter((m: any) => 
+          (m.from_id === user.id && m.to_id === selectedChat.id) ||
+          (m.from_id === selectedChat.id && m.to_id === user.id)
+        )
+        setChatMessages(filtered)
+      }
 
       // Mark as read
       await supabase
@@ -150,7 +158,7 @@ const MessagesPage: React.FC = () => {
   if (!user) return <Navigate to="/" />
 
   const filteredChats = chats.filter(c => 
-    c.username.toLowerCase().includes(searchQuery.toLowerCase())
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (

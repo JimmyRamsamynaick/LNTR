@@ -53,7 +53,6 @@ const Dashboard: React.FC = () => {
   const [showStatusMenu, setShowStatusMenu] = React.useState(false)
   const [replyingToComment, setReplyingToComment] = React.useState<string | null>(null)
   const [replyContent, setReplyContent] = React.useState('')
-  const [isChatExpanded, setIsChatExpanded] = React.useState(false)
   const [isTyping, setIsTyping] = React.useState(false)
 
   const fetchData = React.useCallback(async () => {
@@ -744,7 +743,7 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
 
-              <div className={`p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md flex flex-col min-h-[300px] relative z-10 ${isChatExpanded ? 'fixed inset-4 z-[100] bg-night-900/95' : ''}`}>
+              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md flex flex-col min-h-[300px] relative z-10">
                 {!selectedChat ? (
                   <>
                     <div className="flex items-center justify-between mb-6">
@@ -761,13 +760,6 @@ const Dashboard: React.FC = () => {
                           title="Ouvrir dans un nouvel onglet"
                         >
                           <LucideExternalLink size={20} />
-                        </button>
-                        <button 
-                          onClick={() => setIsChatExpanded(!isChatExpanded)}
-                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-                          title={isChatExpanded ? "Réduire" : "Agrandir"}
-                        >
-                          {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
                         </button>
                       </div>
                     </div>
@@ -836,16 +828,9 @@ const Dashboard: React.FC = () => {
                         >
                           <LucideExternalLink size={20} />
                         </button>
-                        <button 
-                          onClick={() => setIsChatExpanded(!isChatExpanded)}
-                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-                        >
-                          {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
-                        </button>
                       </div>
                     </div>
-
-                    <div className={`flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar ${isChatExpanded ? 'max-h-[70vh]' : 'max-h-[200px]'}`}>
+                    <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar max-h-[200px]">
                       {chatMessages.map((m) => (
                         <div key={m.id} className={`flex ${m.from_id === user.id ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[80%] p-3 rounded-2xl ${isChatExpanded ? 'text-sm' : 'text-xs'} ${
