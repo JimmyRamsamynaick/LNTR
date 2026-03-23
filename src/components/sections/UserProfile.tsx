@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare, LucideUserPlus, LucideUserMinus, LucideGift, LucideHeart } from 'lucide-react'
+import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare, LucideUserPlus, LucideUserMinus, LucideGift, LucideHeart, LucideLoader2 } from 'lucide-react'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { DiscordUser, useAuth } from '../AuthContext'
 import StatusIndicator from '../ui/StatusIndicator'
@@ -746,7 +746,7 @@ const UserProfile: React.FC = () => {
                 
                 {gifts.length > 0 ? (
                   <div className="flex flex-wrap gap-4">
-                    {gifts.map((gift, i) => (
+                    {gifts.map((gift) => (
                       <div key={gift.id} className="relative group/gift">
                         <div className={`p-4 rounded-2xl border transition-all ${
                           gift.gift_type === 'bougie' ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' :
