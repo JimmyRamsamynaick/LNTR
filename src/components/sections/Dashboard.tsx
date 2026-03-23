@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideMinimize2, LucideMaximize2, LucideGift, LucideHeart } from 'lucide-react'
+import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideMinimize2, LucideMaximize2, LucideHeart, LucideExternalLink } from 'lucide-react'
 import { Navigate, Link } from 'react-router-dom'
 import StatusIndicator from '../ui/StatusIndicator'
 import Shoutbox from '../ui/Shoutbox'
@@ -754,13 +754,22 @@ const Dashboard: React.FC = () => {
                         </div>
                         <h3 className="text-xl font-bold">Messages Privés</h3>
                       </div>
-                      <button 
-                        onClick={() => setIsChatExpanded(!isChatExpanded)}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-                        title={isChatExpanded ? "Réduire" : "Agrandir"}
-                      >
-                        {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => window.open('/messages', '_blank')}
+                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+                          title="Ouvrir dans un nouvel onglet"
+                        >
+                          <LucideExternalLink size={20} />
+                        </button>
+                        <button 
+                          onClick={() => setIsChatExpanded(!isChatExpanded)}
+                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+                          title={isChatExpanded ? "Réduire" : "Agrandir"}
+                        >
+                          {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
                       {chats.length === 0 ? (
@@ -819,12 +828,21 @@ const Dashboard: React.FC = () => {
                           <h4 className="font-bold text-amber-500">{selectedChat.username}</h4>
                         </Link>
                       </div>
-                      <button 
-                        onClick={() => setIsChatExpanded(!isChatExpanded)}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-                      >
-                        {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => window.open('/messages', '_blank')}
+                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+                          title="Ouvrir dans un nouvel onglet"
+                        >
+                          <LucideExternalLink size={20} />
+                        </button>
+                        <button 
+                          onClick={() => setIsChatExpanded(!isChatExpanded)}
+                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+                        >
+                          {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
+                        </button>
+                      </div>
                     </div>
 
                     <div className={`flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar ${isChatExpanded ? 'max-h-[70vh]' : 'max-h-[200px]'}`}>

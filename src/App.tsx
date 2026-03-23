@@ -17,6 +17,7 @@ import Members from './components/sections/Members'
 import Shop from './components/sections/Shop'
 import UserProfile from './components/sections/UserProfile'
 import ProfileRedirect from './components/ui/ProfileRedirect'
+import MessagesPage from './components/sections/MessagesPage'
 import Legal from './components/sections/Legal'
 import ScrollToTop from './components/ui/ScrollToTop'
 import ProfileSettings from './components/sections/ProfileSettings'
@@ -273,6 +274,7 @@ const App: React.FC = () => {
             <Route path="/u/:username" element={<ProfileRedirect />} />
             <Route path="/settings" element={<ProfileSettings />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/messages" element={<MessagesPage />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
