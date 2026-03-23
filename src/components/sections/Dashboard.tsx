@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideMinimize2, LucideMaximize2 } from 'lucide-react'
+import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideMinimize2, LucideMaximize2, LucideGift, LucideHeart } from 'lucide-react'
 import { Navigate, Link } from 'react-router-dom'
 import StatusIndicator from '../ui/StatusIndicator'
 import Shoutbox from '../ui/Shoutbox'
@@ -28,6 +28,7 @@ const Dashboard: React.FC = () => {
   const [chats, setChats] = React.useState<any[]>([])
   const [recentVisitors, setRecentVisitors] = React.useState<any[]>([])
   const [profileComments, setProfileComments] = React.useState<any[]>([])
+  const [gifts, setGifts] = React.useState<any[]>([])
 
   // Load from cache as soon as user is available
   React.useEffect(() => {
@@ -36,11 +37,13 @@ const Dashboard: React.FC = () => {
       const cachedChats = localStorage.getItem(`cache_chats_${user.id}`)
       const cachedVisitors = localStorage.getItem(`cache_visitors_${user.id}`)
       const cachedComments = localStorage.getItem(`cache_comments_${user.id}`)
+      const cachedGifts = localStorage.getItem(`cache_gifts_${user.id}`)
 
       if (cachedNotifs) setNotifications(JSON.parse(cachedNotifs))
       if (cachedChats) setChats(JSON.parse(cachedChats))
       if (cachedVisitors) setRecentVisitors(JSON.parse(cachedVisitors))
       if (cachedComments) setProfileComments(JSON.parse(cachedComments))
+      if (cachedGifts) setGifts(JSON.parse(cachedGifts))
     }
   }, [user?.id])
 
@@ -57,7 +60,7 @@ const Dashboard: React.FC = () => {
     if (!user) return
 
     // Run all fetches in parallel for maximum speed
-    const [notifsRes, commentsRes, msgsRes] = await Promise.all([
+    const [notifsRes, commentsRes, msgsRes, giftsRes] = await Promise.all([
       supabase
         .from('notifications')
         .select('*')
@@ -73,6 +76,11 @@ const Dashboard: React.FC = () => {
         .from('private_messages')
         .select('*')
         .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('profile_gifts')
+        .select('*')
+        .eq('to_id', user.id)
         .order('created_at', { ascending: false })
     ])
 
@@ -80,6 +88,12 @@ const Dashboard: React.FC = () => {
     if (notifsRes.data) {
       setNotifications(notifsRes.data)
       localStorage.setItem(`cache_notifs_${user.id}`, JSON.stringify(notifsRes.data))
+    }
+
+    // Update Gifts
+    if (giftsRes.data) {
+      setGifts(giftsRes.data)
+      localStorage.setItem(`cache_gifts_${user.id}`, JSON.stringify(giftsRes.data))
     }
 
     // Update Profile Comments
@@ -987,6 +1001,64 @@ const Dashboard: React.FC = () => {
                   ))
                 )}
               </div>
+            </div>
+
+            {/* Gifts Showcase */}
+            <div className="p-8 md:p-12 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:scale-110 transition-transform">
+                    <LucideHeart className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-2xl font-serif font-black uppercase tracking-widest">Tes Cadeaux Reçus</h3>
+                </div>
+                <div className="flex gap-4">
+                  {[
+                    { type: 'bougie', icon: LucideFlame, color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+                    { type: 'etoile', icon: LucideSparkles, color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
+                    { type: 'lanterne', icon: LucideCrown, color: 'text-violet-400', bgColor: 'bg-violet-400/10' }
+                  ].map(g => {
+                    const count = gifts.filter(gift => gift.gift_type === g.type).length
+                    return (
+                      <div key={g.type} className={`flex items-center gap-2 px-4 py-2 rounded-xl border border-white/5 ${g.bgColor} ${g.color}`}>
+                        <g.icon size={16} />
+                        <span className="text-sm font-black">{count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {gifts.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                  {gifts.map((gift) => (
+                    <div key={gift.id} className="relative group/gift-item">
+                      <div className={`p-4 rounded-2xl border border-white/5 transition-all hover:scale-105 ${
+                        gift.gift_type === 'bougie' ? 'bg-orange-500/5 text-orange-500' :
+                        gift.gift_type === 'etoile' ? 'bg-blue-500/5 text-blue-400' :
+                        'bg-violet-500/5 text-violet-400'
+                      }`}>
+                        <div className="flex flex-col items-center gap-2">
+                          {gift.gift_type === 'bougie' ? <LucideFlame size={24} /> :
+                           gift.gift_type === 'etoile' ? <LucideSparkles size={24} /> :
+                           <LucideCrown size={24} />}
+                        </div>
+                      </div>
+                      
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-night-800 border border-white/10 rounded-xl opacity-0 group-hover/gift-item:opacity-100 transition-opacity z-50 pointer-events-none shadow-2xl">
+                        <p className="text-[10px] font-bold text-amber-500 uppercase mb-1">De {gift.from_username || 'Anonyme'}</p>
+                        {gift.message && <p className="text-[10px] text-gray-400 italic line-clamp-3">"{gift.message}"</p>}
+                        <p className="text-[8px] text-gray-600 mt-2">{new Date(gift.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                  <p className="text-gray-500 italic">"Ta vitrine est encore vide... Participe à la vie du sanctuaire pour recevoir tes premiers cadeaux !"</p>
+                </div>
+              )}
             </div>
 
             {/* Shoutbox */}
