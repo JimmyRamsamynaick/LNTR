@@ -23,48 +23,74 @@ const roleConfig = [
 
 const Dashboard: React.FC = () => {
   const { user, logout, loading, updateStatus, refreshUser } = useAuth()
-  const [notifications, setNotifications] = React.useState<any[]>([])
-  const [chats, setChats] = React.useState<any[]>([])
+  
+  // Initialize with cache for instant loading
+  const [notifications, setNotifications] = React.useState<any[]>(() => {
+    const cached = localStorage.getItem(`cache_notifs_${user?.id}`)
+    return cached ? JSON.parse(cached) : []
+  })
+  const [chats, setChats] = React.useState<any[]>(() => {
+    const cached = localStorage.getItem(`cache_chats_${user?.id}`)
+    return cached ? JSON.parse(cached) : []
+  })
+  const [recentVisitors, setRecentVisitors] = React.useState<any[]>(() => {
+    const cached = localStorage.getItem(`cache_visitors_${user?.id}`)
+    return cached ? JSON.parse(cached) : []
+  })
+  const [profileComments, setProfileComments] = React.useState<any[]>(() => {
+    const cached = localStorage.getItem(`cache_comments_${user?.id}`)
+    return cached ? JSON.parse(cached) : []
+  })
+
   const [selectedChat, setSelectedChat] = React.useState<any | null>(null)
   const [chatMessages, setChatMessages] = React.useState<any[]>([])
   const [newMsg, setNewMsg] = React.useState('')
   const [showStatusMenu, setShowStatusMenu] = React.useState(false)
-  const [recentVisitors, setRecentVisitors] = React.useState<any[]>([])
-  const [profileComments, setProfileComments] = React.useState<any[]>([])
   const [replyingToComment, setReplyingToComment] = React.useState<string | null>(null)
   const [replyContent, setReplyContent] = React.useState('')
 
   const fetchData = React.useCallback(async () => {
     if (!user) return
 
-    // 1. Fetch Notifications
-    const { data: notifs } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-    if (notifs) setNotifications(notifs)
+    // Run all fetches in parallel for maximum speed
+    const [notifsRes, commentsRes, msgsRes] = await Promise.all([
+      supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('profile_comments')
+        .select('*')
+        .eq('profile_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('private_messages')
+        .select('*')
+        .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
+        .order('created_at', { ascending: false })
+    ])
 
-    // 1.5 Fetch Profile Comments
-    const { data: comments } = await supabase
-      .from('profile_comments')
-      .select('*')
-      .eq('profile_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(10)
-    if (comments) {
-      // For each comment, check if there's a reply from me (the profile owner)
-      const parents = comments.filter(c => !c.parent_id)
-      const replies = comments.filter(c => c.parent_id)
-      
+    // Update Notifications
+    if (notifsRes.data) {
+      setNotifications(notifsRes.data)
+      localStorage.setItem(`cache_notifs_${user.id}`, JSON.stringify(notifsRes.data))
+    }
+
+    // Update Profile Comments
+    if (commentsRes.data) {
+      const parents = commentsRes.data.filter(c => !c.parent_id)
+      const replies = commentsRes.data.filter(c => c.parent_id)
       const mappedComments = parents.map(p => ({
         ...p,
         replies: replies.filter(r => r.parent_id === p.id)
       }))
       setProfileComments(mappedComments)
+      localStorage.setItem(`cache_comments_${user.id}`, JSON.stringify(mappedComments))
     }
 
-    // 2. Fetch Recent Visitors (Tier 3 only)
+    // Update Recent Visitors (Tier 3 only)
     const isEternel = user?.roles?.some(roleId => [
       DISCORD_CONFIG.ROLES.OWNER,
       DISCORD_CONFIG.ROLES.CO_OWNER,
@@ -75,7 +101,6 @@ const Dashboard: React.FC = () => {
     if (isEternel) {
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
       const { data: visitors } = await supabase
         .from('profile_views')
         .select('*')
@@ -84,53 +109,49 @@ const Dashboard: React.FC = () => {
         .order('viewed_at', { ascending: false })
         .limit(10)
       
-      if (visitors) setRecentVisitors(visitors)
+      if (visitors) {
+        setRecentVisitors(visitors)
+        localStorage.setItem(`cache_visitors_${user.id}`, JSON.stringify(visitors))
+      }
     }
 
-    // 3. Fetch Conversations
-    const { data: msgs } = await supabase
-      .from('private_messages')
-      .select('*')
-      .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
-      .order('created_at', { ascending: false })
-
-    if (msgs) {
-      // Get all unique contact IDs
-      const contactIds = Array.from(new Set(msgs.map((m: any) => 
+    // Update Chats
+    if (msgsRes.data) {
+      const contactIds = Array.from(new Set(msgsRes.data.map((m: any) => 
         m.from_id === user.id ? m.to_id : m.from_id
       )))
 
-      // Fetch contact details from members table
       const { data: contactsData } = await supabase
         .from('members')
         .select('id, username, avatar')
         .in('id', contactIds)
 
       const contactsMap = new Map(contactsData?.map(c => [c.id, c]))
-
-      // Group messages by contact to create chat list
-        const chatMap = new Map()
-        msgs.forEach((m: any) => {
-          const contactId = m.from_id === user.id ? m.to_id : m.from_id
-          const contact = contactsMap.get(contactId)
-          const isFromMe = m.from_id === user.id
-          
-          if (!chatMap.has(contactId)) {
-            chatMap.set(contactId, {
-              id: contactId,
-              username: contact?.username || (isFromMe ? 'Contact' : m.from_username),
-              avatar: contact?.avatar,
-              lastMessage: m.content,
-              timestamp: m.created_at,
-              unreadCount: !isFromMe && m.read === false ? 1 : 0
-            })
-          } else if (!isFromMe && m.read === false) {
-            const current = chatMap.get(contactId)
-            chatMap.set(contactId, { ...current, unreadCount: current.unreadCount + 1 })
-          }
-        })
-        setChats(Array.from(chatMap.values()))
-      }
+      const chatMap = new Map()
+      
+      msgsRes.data.forEach((m: any) => {
+        const contactId = m.from_id === user.id ? m.to_id : m.from_id
+        const contact = contactsMap.get(contactId)
+        const isFromMe = m.from_id === user.id
+        
+        if (!chatMap.has(contactId)) {
+          chatMap.set(contactId, {
+            id: contactId,
+            username: contact?.username || (isFromMe ? 'Contact' : m.from_username),
+            avatar: contact?.avatar,
+            lastMessage: m.content,
+            timestamp: m.created_at,
+            unreadCount: !isFromMe && m.read === false ? 1 : 0
+          })
+        } else if (!isFromMe && m.read === false) {
+          const current = chatMap.get(contactId)
+          chatMap.set(contactId, { ...current, unreadCount: current.unreadCount + 1 })
+        }
+      })
+      const finalChats = Array.from(chatMap.values())
+      setChats(finalChats)
+      localStorage.setItem(`cache_chats_${user.id}`, JSON.stringify(finalChats))
+    }
   }, [user?.id]) // Depend only on user.id to avoid loop
 
   // Fetch initial data
