@@ -20,6 +20,7 @@ const ProfileSettings: React.FC = () => {
   const [nicknameGradientColor2, setNicknameGradientColor2] = useState('#FFFFFF')
   const [featuredBadges, setFeaturedBadges] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +120,7 @@ const ProfileSettings: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      setIsSaving(true)
       await updateProfile({
         bio,
         bannerColor: hasPackLanterne ? bannerColor : '#1a1a1a',
@@ -131,13 +133,18 @@ const ProfileSettings: React.FC = () => {
         nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : undefined,
         featured_badges: featuredBadges
       })
+      
       setSaved(true)
+      
+      // On réduit le délai de redirection pour plus de réactivité
       setTimeout(() => {
         setSaved(false)
         navigate('/dashboard')
-      }, 2000)
+      }, 1000)
     } catch (e) {
       alert('Erreur lors de la sauvegarde du profil.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -608,9 +615,25 @@ const ProfileSettings: React.FC = () => {
             <div className="pt-4">
               <button 
                 onClick={handleSave}
-                className="w-full py-5 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded-2xl transition-all shadow-[0_0_30px_rgba(255,170,0,0.2)] flex items-center justify-center gap-3 text-lg"
+                disabled={isSaving}
+                className={`w-full py-5 ${isSaving ? 'bg-amber-600/50 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500'} text-black font-bold rounded-2xl transition-all shadow-[0_0_30px_rgba(255,170,0,0.2)] flex items-center justify-center gap-3 text-lg`}
               >
-                <LucideSave size={24} /> Sauvegarder les modifications
+                {isSaving ? (
+                  <>
+                    <LucideLoader2 size={24} className="animate-spin" />
+                    Sauvegarde en cours...
+                  </>
+                ) : saved ? (
+                  <>
+                    <LucideCheckCircle size={24} />
+                    Profil Sauvegardé !
+                  </>
+                ) : (
+                  <>
+                    <LucideSave size={24} />
+                    Sauvegarder les modifications
+                  </>
+                )}
               </button>
             </div>
           </div>
