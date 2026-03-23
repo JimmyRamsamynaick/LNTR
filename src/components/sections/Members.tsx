@@ -94,19 +94,26 @@ const Members: React.FC = () => {
   const getMemberBadges = (m: DiscordUser) => {
     const badges = []
     
-    // Check premium tier first
-    if ((m.premium_tier || 0) >= 1) {
-      const tiers = [
-        { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-        { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
-        { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
-      ]
-      
-      const featuredIds = m.featured_badges || []
-      const tier = tiers.find(t => t.tier === m.premium_tier)
-      if (tier && (featuredIds.length === 0 || featuredIds.includes(tier.id))) {
-        badges.push(tier)
-      }
+    // Add premium tier badges based on selection
+    const tiers = [
+      { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+      { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
+      { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
+    ]
+    
+    const featuredIds = m.featured_badges || []
+    
+    if (featuredIds.length === 0) {
+      // Default behavior: only show the highest tier badge they have access to
+      const highestTier = tiers.filter(t => t.tier <= (m.premium_tier || 0)).pop()
+      if (highestTier) badges.push(highestTier)
+    } else {
+      // Show all selected badges they have access to
+      tiers.forEach(t => {
+        if (t.tier <= (m.premium_tier || 0) && featuredIds.includes(t.id)) {
+          badges.push(t)
+        }
+      })
     }
 
     // Add discord roles

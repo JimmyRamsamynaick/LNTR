@@ -318,21 +318,29 @@ const Dashboard: React.FC = () => {
   ].includes(roleId))
   const isVip = isStaff || isVipOnDiscord || (user?.premium_tier || 0) >= 1
 
-  const premiumTiers = [
-    { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-    { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
-    { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
-  ]
-
   const getAllBadges = () => {
     const badges = []
+    
+    // Add premium tier badges based on selection
+    const tiers = [
+      { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+      { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
+      { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
+    ]
+    
     const featuredIds = user?.featured_badges || []
     
-    // Add premium tier badge
-    const tier = premiumTiers.find(p => p.tier === user?.premium_tier)
-    // Only add premium badge if it's featured OR if no badges are featured yet
-    if (tier && (featuredIds.length === 0 || featuredIds.includes(tier.id))) {
-      badges.push(tier)
+    if (featuredIds.length === 0) {
+      // Default behavior: only show the highest tier badge they have access to
+      const highestTier = tiers.filter(t => t.tier <= (user?.premium_tier || 0)).pop()
+      if (highestTier) badges.push(highestTier)
+    } else {
+      // Show all selected badges they have access to
+      tiers.forEach(t => {
+        if (t.tier <= (user?.premium_tier || 0) && featuredIds.includes(t.id)) {
+          badges.push(t)
+        }
+      })
     }
     
     // Add all matching discord roles
