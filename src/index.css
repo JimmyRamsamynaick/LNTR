@@ -111,7 +111,6 @@
     -webkit-text-fill-color: transparent !important;
     animation: gold-shine 3s linear infinite;
     font-weight: 800;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
     display: inline-block;
   }
 

@@ -423,9 +423,11 @@ const Dashboard: React.FC = () => {
                 <h2 
                   className={`text-2xl md:text-3xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
                   style={{ 
-                    background: hasGradientNickname ? `linear-gradient(to right, ${user.nicknameGradientColor1}, ${user.nicknameGradientColor2})` : 'none',
-                    WebkitBackgroundClip: hasGradientNickname ? 'text' : 'initial',
-                    color: hasGoldNickname ? 'transparent' : (hasGradientNickname ? 'transparent' : (user.displayNameColor || '#FFFFFF')),
+                    background: hasGradientNickname 
+                      ? `linear-gradient(to right, ${user.nicknameGradientColor1}, ${user.nicknameGradientColor2})` 
+                      : (hasGoldNickname ? undefined : 'none'),
+                    WebkitBackgroundClip: (hasGradientNickname || hasGoldNickname) ? 'text' : 'initial',
+                    color: (hasGoldNickname || hasGradientNickname) ? 'transparent' : (user.displayNameColor || '#FFFFFF'),
                     WebkitTextFillColor: (hasGoldNickname || hasGradientNickname) ? 'transparent' : 'initial'
                   }}
                 >
