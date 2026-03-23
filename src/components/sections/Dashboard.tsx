@@ -37,9 +37,6 @@ const Dashboard: React.FC = () => {
   const fetchData = React.useCallback(async () => {
     if (!user) return
 
-    // Refresh user data (premium tier, etc.)
-    await refreshUser()
-
     // 1. Fetch Notifications
     const { data: notifs } = await supabase
       .from('notifications')

@@ -43,8 +43,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<DiscordUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refreshUser = async () => {
-    if (!user) return
+  const refreshUser = React.useCallback(async () => {
+    // On essaie de récupérer l'utilisateur depuis l'état ou le localStorage
+    let currentUser = user
+    if (!currentUser) {
+      const storedUser = localStorage.getItem('discord_user')
+      if (storedUser) currentUser = JSON.parse(storedUser)
+    }
+
+    if (!currentUser) return
 
     try {
       const accessToken = localStorage.getItem('discord_token')
@@ -65,14 +72,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         roles = guildMemberResponse.data.roles
       } catch (e) {
         console.error('Error fetching roles during refresh:', e)
-        roles = user.roles || []
+        roles = currentUser.roles || []
       }
 
       // 3. Récupérer les données du profil depuis Supabase
       const { data: memberData } = await supabase
         .from('members')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single()
 
       if (memberData || userResponse.data) {
@@ -83,21 +90,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ECLAT)) premium_tier = 1
 
         const updatedUser: DiscordUser = {
-          ...user,
-          username: userResponse.data?.username || user.username,
-          avatar: userResponse.data?.avatar || user.avatar,
+          ...currentUser,
+          username: userResponse.data?.username || currentUser.username,
+          avatar: userResponse.data?.avatar || currentUser.avatar,
           roles: roles,
-          status: memberData?.status || user.status,
-          custom_status: memberData?.custom_status || user.custom_status,
-          bio: memberData?.bio || user.bio,
-          bannerColor: memberData?.banner_color || user.bannerColor,
-          bannerUrl: memberData?.banner_url || user.bannerUrl,
-          displayNameColor: memberData?.display_name_color || user.displayNameColor,
-          nicknameGradientColor1: memberData?.nickname_gradient_color1 || user.nicknameGradientColor1,
-          nicknameGradientColor2: memberData?.nickname_gradient_color2 || user.nicknameGradientColor2,
-          featured_badges: memberData?.featured_badges || user.featured_badges || [],
+          status: memberData?.status || currentUser.status,
+          custom_status: memberData?.custom_status || currentUser.custom_status,
+          bio: memberData?.bio || currentUser.bio,
+          bannerColor: memberData?.banner_color || currentUser.bannerColor,
+          bannerUrl: memberData?.banner_url || currentUser.bannerUrl,
+          displayNameColor: memberData?.display_name_color || currentUser.displayNameColor,
+          nicknameGradientColor1: memberData?.nickname_gradient_color1 || currentUser.nicknameGradientColor1,
+          nicknameGradientColor2: memberData?.nickname_gradient_color2 || currentUser.nicknameGradientColor2,
+          featured_badges: memberData?.featured_badges || currentUser.featured_badges || [],
           premium_tier: premium_tier || memberData?.premium_tier || 0,
-          premium_since: memberData?.premium_since || (premium_tier > 0 ? (user.premium_since || new Date().toISOString()) : undefined),
+          premium_since: memberData?.premium_since || (premium_tier > 0 ? (currentUser.premium_since || new Date().toISOString()) : undefined),
           incognito_mode: memberData?.incognito_mode || false,
           gold_nickname: memberData?.gold_nickname !== false,
           flames_count: memberData?.flames_count || 0
@@ -116,24 +123,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             premium_since: updatedUser.premium_since,
             last_seen: new Date().toISOString()
           })
-          .eq('id', user.id)
+          .eq('id', currentUser.id)
       }
     } catch (e) {
       console.error('Failed to refresh user:', e)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     const storedUser = localStorage.getItem('discord_user')
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
+        // Refresh roles and avatar immediately after loading from storage
+        refreshUser()
       } catch (error) {
         console.error('Failed to parse stored user:', error)
         localStorage.removeItem('discord_user')
       }
     }
     setLoading(false)
+
+    // Optional: Refresh when the window gets focus
+    const handleFocus = () => {
+      if (localStorage.getItem('discord_token')) {
+        refreshUser()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
   const login = () => {
