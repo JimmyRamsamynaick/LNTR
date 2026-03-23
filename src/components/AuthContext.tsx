@@ -24,6 +24,9 @@ export interface DiscordUser {
   incognito_mode?: boolean
   gold_nickname?: boolean
   flames_count?: number
+  streak_count?: number
+  last_streak_at?: string
+  custom_url?: string
 }
 
 interface AuthContextType {
@@ -107,11 +110,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           premium_since: memberData?.premium_since || (premium_tier > 0 ? (currentUser.premium_since || new Date().toISOString()) : undefined),
           incognito_mode: memberData?.incognito_mode || false,
           gold_nickname: memberData?.gold_nickname !== false,
-          flames_count: memberData?.flames_count || 0
+          flames_count: memberData?.flames_count || 0,
+          streak_count: memberData?.streak_count || 0,
+          last_streak_at: memberData?.last_streak_at,
+          custom_url: memberData?.custom_url
         }
 
         setUser(updatedUser)
         localStorage.setItem('discord_user', JSON.stringify(updatedUser))
+
+        // Mettre à jour la série de connexion (Streak)
+        const { data: newStreak } = await supabase.rpc('update_daily_streak', { user_id_param: currentUser.id })
+        if (newStreak !== undefined) {
+          updatedUser.streak_count = newStreak
+          setUser({ ...updatedUser })
+        }
 
         // Mettre à jour Supabase avec les nouvelles infos Discord (avatar/rôles)
         await supabase
@@ -330,7 +343,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         nicknameGradientColor2: memberData?.nickname_gradient_color2,
         featured_badges: memberData?.featured_badges || [],
         premium_tier: premium_tier || memberData?.premium_tier || 0,
-        premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : undefined)
+        premium_since: memberData?.premium_since || (premium_tier > 0 ? new Date().toISOString() : undefined),
+        streak_count: memberData?.streak_count || 0,
+        last_streak_at: memberData?.last_streak_at,
+        custom_url: memberData?.custom_url
       }
 
       setUser(userData)

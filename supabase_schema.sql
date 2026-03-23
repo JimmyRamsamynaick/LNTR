@@ -27,6 +27,9 @@ create table if not exists public.members (
     incognito_mode boolean default false,
     gold_nickname boolean default true,
     flames_count integer default 0,
+    streak_count integer default 0,
+    last_streak_at timestamp with time zone,
+    custom_url text unique,
     last_seen timestamp with time zone default now()
 );
 
@@ -73,6 +76,14 @@ create table if not exists public.profile_flames (
     primary key (from_id, to_id)
 );
 
+-- Table: follows (Suivi des membres)
+create table if not exists public.follows (
+    follower_id text references public.members(id) on delete cascade,
+    following_id text references public.members(id) on delete cascade,
+    created_at timestamp with time zone default now(),
+    primary key (follower_id, following_id)
+);
+
 -- Table: profile_views (Visiteurs récents)
 create table if not exists public.profile_views (
     profile_id text references public.members(id) on delete cascade,
@@ -81,6 +92,16 @@ create table if not exists public.profile_views (
     viewer_avatar text,
     viewed_at timestamp with time zone default now(),
     primary key (profile_id, viewer_id)
+);
+
+-- Table: profile_gifts (Cadeaux reçus)
+create table if not exists public.profile_gifts (
+    id uuid primary key default gen_random_uuid(),
+    from_id text references public.members(id) on delete cascade,
+    to_id text references public.members(id) on delete cascade,
+    gift_type text not null, -- 'bougie', 'etoile', 'lanterne'
+    message text,
+    created_at timestamp with time zone default now()
 );
 
 -- Table: private_messages (Messages privés)
@@ -134,6 +155,11 @@ returns boolean as $$
 declare
     last_flame timestamp with time zone;
 begin
+    -- On ne peut pas s'envoyer de flamme à soi-même
+    if visitor_id = member_id then
+        return false;
+    end if;
+
     -- Récupérer la date de la dernière flamme envoyée par ce visiteur à ce membre
     select last_flame_at into last_flame 
     from public.profile_flames 
@@ -156,6 +182,36 @@ begin
     where id = member_id;
 
     return true;
+end;
+$$ language plpgsql security definer;
+
+-- Fonction: Gérer la série de connexion (Daily Streak)
+create or replace function public.update_daily_streak(user_id_param text)
+returns integer as $$
+declare
+    last_streak timestamp with time zone;
+    current_streak integer;
+begin
+    select last_streak_at, streak_count into last_streak, current_streak 
+    from public.members 
+    where id = user_id_param;
+
+    -- Si jamais connecté ou dernière connexion > 48h (série brisée)
+    if last_streak is null or last_streak < (now() - interval '48 hours') then
+        update public.members 
+        set streak_count = 1, last_streak_at = now() 
+        where id = user_id_param;
+        return 1;
+    -- Si déjà connecté aujourd'hui (< 24h et même jour calendaire approx)
+    elsif last_streak > (now() - interval '24 hours') then
+        return current_streak;
+    -- Si connecté hier (entre 24h et 48h)
+    else
+        update public.members 
+        set streak_count = coalesce(streak_count, 0) + 1, last_streak_at = now() 
+        where id = user_id_param;
+        return current_streak + 1;
+    end if;
 end;
 $$ language plpgsql security definer;
 

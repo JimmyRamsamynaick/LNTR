@@ -387,6 +387,13 @@ const UserProfile: React.FC = () => {
   const hasGoldNickname = isEternel && member.gold_nickname !== false
   const hasGradientNickname = isEternel && !member.gold_nickname && member.nicknameGradientColor1 && member.nicknameGradientColor2
 
+  const getFlameColor = (count: number) => {
+    if (count >= 500) return 'text-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.5)]'
+    if (count >= 100) return 'text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+    if (count >= 50) return 'text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]'
+    return 'text-gray-400'
+  }
+
   const handleFlame = async () => {
     if (!currentUser || currentUser.id === member.id) return
     
@@ -527,22 +534,13 @@ const UserProfile: React.FC = () => {
 
               {/* Flames Button */}
               <div className="flex justify-center mb-4 relative z-10">
-                <button
+                <button 
                   onClick={handleFlame}
                   disabled={!currentUser || currentUser.id === member.id}
-                  className={`flex items-center gap-4 px-8 py-4 rounded-2xl transition-all duration-500 group touch-manipulation shadow-xl ${
-                    currentUser?.id === member.id 
-                      ? 'bg-white/5 text-gray-600 cursor-default border border-white/5' 
-                      : 'bg-amber-500 text-black font-black hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.5)]'
-                  }`}
+                  className={`w-full py-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 group transition-all hover:bg-white/10 active:scale-95 ${getFlameColor(member.flames_count || 0)}`}
                 >
-                  <div className="relative">
-                    <LucideFlame size={22} className={currentUser?.id !== member.id ? "group-hover:animate-bounce" : ""} />
-                    {currentUser?.id !== member.id && (
-                      <LucideSparkles size={14} className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-                    )}
-                  </div>
-                  <span className="text-sm uppercase tracking-widest">{member.flames_count || 0} Flammes</span>
+                  <LucideFlame size={20} className={`${(member.flames_count || 0) > 0 ? 'fill-current animate-pulse' : ''}`} />
+                  <span className="font-bold uppercase tracking-widest text-sm">{(member.flames_count || 0)} Flammes</span>
                 </button>
               </div>
             </div>

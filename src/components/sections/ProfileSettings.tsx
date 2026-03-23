@@ -19,6 +19,7 @@ const ProfileSettings: React.FC = () => {
   const [nicknameGradientColor1, setNicknameGradientColor1] = useState('#FFFFFF')
   const [nicknameGradientColor2, setNicknameGradientColor2] = useState('#FFFFFF')
   const [featuredBadges, setFeaturedBadges] = useState<string[]>([])
+  const [customUrl, setCustomUrl] = useState('')
   const [saved, setSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -88,6 +89,7 @@ const ProfileSettings: React.FC = () => {
       setNicknameGradientColor1(user.nicknameGradientColor1 || '#FFFFFF')
       setNicknameGradientColor2(user.nicknameGradientColor2 || '#FFFFFF')
       setFeaturedBadges(user.featured_badges || [])
+      setCustomUrl(user.custom_url || '')
     }
   }, [user])
 
@@ -131,7 +133,8 @@ const ProfileSettings: React.FC = () => {
         gold_nickname: hasPackEternel ? goldNickname : false,
         nicknameGradientColor1: hasPackEternel ? nicknameGradientColor1 : undefined,
         nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : undefined,
-        featured_badges: featuredBadges
+        featured_badges: featuredBadges,
+        custom_url: hasPackEternel ? customUrl.toLowerCase().trim() : undefined
       })
       
       setSaved(true)
@@ -543,6 +546,40 @@ const ProfileSettings: React.FC = () => {
                   </div>
                   {!hasPackEternel && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Requis: Pack Éternel</p>}
                   {hasPackEternel && goldNickname && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Désactivez le pseudo gold pour utiliser le dégradé</p>}
+                </div>
+
+                {/* Custom URL - Pack Eternel (Tier 3) */}
+                <div className={`relative ${!hasPackEternel && 'opacity-40'} col-span-1 md:col-span-2 bg-violet-500/5 p-6 rounded-2xl border border-violet-500/10`}>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl ${hasPackEternel ? 'bg-violet-500/20 text-violet-500' : 'bg-white/5 text-gray-500'}`}>
+                        <LucideLink size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white flex items-center gap-2">
+                          URL Personnalisée
+                          {!hasPackEternel && <LucideCrown size={12} className="text-amber-500" />}
+                        </h4>
+                        <p className="text-xs text-gray-500">Créez un lien court unique vers votre profil (lntr.site/u/votre-pseudo).</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-4 bg-black/20 rounded-xl border border-white/5">
+                      <span className="text-gray-500 font-mono text-sm">lntr.site/u/</span>
+                      <input 
+                        type="text" 
+                        placeholder="votre-pseudo"
+                        value={customUrl}
+                        onChange={(e) => hasPackEternel && setCustomUrl(e.target.value.replace(/[^a-zA-Z0-9-_]/g, ''))}
+                        disabled={!hasPackEternel}
+                        className="bg-transparent border-none outline-none text-amber-500 font-bold w-full"
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-500 italic">Uniquement lettres, chiffres, tirets et underscores.</p>
+                  </div>
+                  {!hasPackEternel && <p className="text-[10px] text-amber-500/60 mt-4 font-bold uppercase">Requis: Pack Éternel</p>}
                 </div>
               </div>
             </div>

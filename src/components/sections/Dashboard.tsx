@@ -24,23 +24,25 @@ const roleConfig = [
 const Dashboard: React.FC = () => {
   const { user, logout, loading, updateStatus, refreshUser } = useAuth()
   
-  // Initialize with cache for instant loading
-  const [notifications, setNotifications] = React.useState<any[]>(() => {
-    const cached = localStorage.getItem(`cache_notifs_${user?.id}`)
-    return cached ? JSON.parse(cached) : []
-  })
-  const [chats, setChats] = React.useState<any[]>(() => {
-    const cached = localStorage.getItem(`cache_chats_${user?.id}`)
-    return cached ? JSON.parse(cached) : []
-  })
-  const [recentVisitors, setRecentVisitors] = React.useState<any[]>(() => {
-    const cached = localStorage.getItem(`cache_visitors_${user?.id}`)
-    return cached ? JSON.parse(cached) : []
-  })
-  const [profileComments, setProfileComments] = React.useState<any[]>(() => {
-    const cached = localStorage.getItem(`cache_comments_${user?.id}`)
-    return cached ? JSON.parse(cached) : []
-  })
+  const [notifications, setNotifications] = React.useState<any[]>([])
+  const [chats, setChats] = React.useState<any[]>([])
+  const [recentVisitors, setRecentVisitors] = React.useState<any[]>([])
+  const [profileComments, setProfileComments] = React.useState<any[]>([])
+
+  // Load from cache as soon as user is available
+  React.useEffect(() => {
+    if (user?.id) {
+      const cachedNotifs = localStorage.getItem(`cache_notifs_${user.id}`)
+      const cachedChats = localStorage.getItem(`cache_chats_${user.id}`)
+      const cachedVisitors = localStorage.getItem(`cache_visitors_${user.id}`)
+      const cachedComments = localStorage.getItem(`cache_comments_${user.id}`)
+
+      if (cachedNotifs) setNotifications(JSON.parse(cachedNotifs))
+      if (cachedChats) setChats(JSON.parse(cachedChats))
+      if (cachedVisitors) setRecentVisitors(JSON.parse(cachedVisitors))
+      if (cachedComments) setProfileComments(JSON.parse(cachedComments))
+    }
+  }, [user?.id])
 
   const [selectedChat, setSelectedChat] = React.useState<any | null>(null)
   const [chatMessages, setChatMessages] = React.useState<any[]>([])
@@ -48,6 +50,8 @@ const Dashboard: React.FC = () => {
   const [showStatusMenu, setShowStatusMenu] = React.useState(false)
   const [replyingToComment, setReplyingToComment] = React.useState<string | null>(null)
   const [replyContent, setReplyContent] = React.useState('')
+  const [isChatExpanded, setIsChatExpanded] = React.useState(false)
+  const [isTyping, setIsTyping] = React.useState(false)
 
   const fetchData = React.useCallback(async () => {
     if (!user) return
@@ -278,12 +282,15 @@ const Dashboard: React.FC = () => {
         })
 
       setNewMsg('')
+      setIsTyping(false)
       // fetchData() // On retire cet appel car le realtime va maintenant s'en charger proprement
     } else {
       console.error('Erreur lors de l\'envoi du message:', msgError)
       alert(`Erreur: ${msgError.message}`)
     }
   }
+
+  const quickReplies = ["Hello ! Ô×£", "Merci ! Ô£¿", "On joue ?", "À plus tard ! Ô£ô", "Trop cool ! Ô£¿"]
 
   const markAsRead = async () => {
     if (user) {
@@ -436,6 +443,30 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
           {/* Sidebar Area */}
           <div className="lg:col-span-1 space-y-6 md:space-y-10">
+            {/* Daily Streak Card */}
+            <div className="p-6 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-orange-500/20 text-orange-500">
+                    <LucideFlame size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm">Série de connexion</h3>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Revenez chaque jour !</p>
+                  </div>
+                </div>
+                <div className="text-2xl font-black text-orange-500">{user.streak_count || 0}</div>
+              </div>
+              <div className="flex gap-1.5 justify-between">
+                {[...Array(7)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`h-1.5 flex-1 rounded-full ${(user.streak_count || 0) > i ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'bg-white/10'}`} 
+                  />
+                ))}
+              </div>
+            </div>
+
             {/* Profile Info Card */}
             <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group shadow-2xl">
               <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-amber-500/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -652,14 +683,23 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
 
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md flex flex-col min-h-[300px] relative z-10">
+              <div className={`p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md flex flex-col min-h-[300px] relative z-10 ${isChatExpanded ? 'fixed inset-4 z-[100] bg-night-900/95' : ''}`}>
                 {!selectedChat ? (
                   <>
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 rounded-xl bg-blue-600/20 text-blue-400">
-                        <LucideMail className="w-6 h-6" />
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-blue-600/20 text-blue-400">
+                          <LucideMail className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-xl font-bold">Messages Privés</h3>
                       </div>
-                      <h3 className="text-xl font-bold">Messages Privés</h3>
+                      <button 
+                        onClick={() => setIsChatExpanded(!isChatExpanded)}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+                        title={isChatExpanded ? "Réduire" : "Agrandir"}
+                      >
+                        {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
+                      </button>
                     </div>
                     <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
                       {chats.length === 0 ? (
@@ -695,33 +735,41 @@ const Dashboard: React.FC = () => {
                   </>
                 ) : (
                   <div className="flex flex-col h-full">
-                    <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/5">
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => setSelectedChat(null)}
+                          className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                        >
+                          <LucideArrowLeft size={20} />
+                        </button>
+                        <Link 
+                          to={`/profile/${selectedChat.id}`}
+                          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                        >
+                          <img
+                            src={selectedChat.avatar 
+                              ? `https://cdn.discordapp.com/avatars/${selectedChat.id}/${selectedChat.avatar}.png?size=64`
+                              : `https://cdn.discordapp.com/embed/avatars/${parseInt(selectedChat.id) % 5}.png`
+                            }
+                            alt={selectedChat.username}
+                            className="w-8 h-8 rounded-full border border-white/10"
+                          />
+                          <h4 className="font-bold text-amber-500">{selectedChat.username}</h4>
+                        </Link>
+                      </div>
                       <button 
-                        onClick={() => setSelectedChat(null)}
-                        className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                        onClick={() => setIsChatExpanded(!isChatExpanded)}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
                       >
-                        <LucideArrowLeft size={20} />
+                        {isChatExpanded ? <LucideMinimize2 size={20} /> : <LucideMaximize2 size={20} />}
                       </button>
-                      <Link 
-                        to={`/profile/${selectedChat.id}`}
-                        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-                      >
-                        <img
-                          src={selectedChat.avatar 
-                            ? `https://cdn.discordapp.com/avatars/${selectedChat.id}/${selectedChat.avatar}.png?size=64`
-                            : `https://cdn.discordapp.com/embed/avatars/${parseInt(selectedChat.id) % 5}.png`
-                          }
-                          alt={selectedChat.username}
-                          className="w-8 h-8 rounded-full border border-white/10"
-                        />
-                        <h4 className="font-bold text-amber-500">{selectedChat.username}</h4>
-                      </Link>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar max-h-[200px]">
+                    <div className={`flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar ${isChatExpanded ? 'max-h-[70vh]' : 'max-h-[200px]'}`}>
                       {chatMessages.map((m) => (
                         <div key={m.id} className={`flex ${m.from_id === user.id ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] p-3 rounded-2xl text-xs ${
+                          <div className={`max-w-[80%] p-3 rounded-2xl ${isChatExpanded ? 'text-sm' : 'text-xs'} ${
                             m.from_id === user.id 
                               ? 'bg-amber-600 text-black font-medium rounded-tr-none' 
                               : 'bg-white/10 text-white rounded-tl-none border border-white/5'
@@ -732,31 +780,53 @@ const Dashboard: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className="mt-auto flex gap-2 p-1">
-                      <input 
-                        type="text"
-                        value={newMsg}
-                        onChange={(e) => setNewMsg(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
+                    {/* Quick Replies */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {quickReplies.map((reply, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setNewMsg(reply)}
+                          className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-400 hover:text-amber-500 hover:border-amber-500/30 transition-all"
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-auto flex flex-col gap-2">
+                      {isTyping && (
+                        <p className="text-[10px] text-amber-500/50 italic ml-2 animate-pulse">En train d'écrire...</p>
+                      )}
+                      <div className="flex gap-2 p-1">
+                        <input 
+                          type="text"
+                          value={newMsg}
+                          onChange={(e) => {
+                            setNewMsg(e.target.value)
+                            if (e.target.value.length > 0 && !isTyping) setIsTyping(true)
+                            if (e.target.value.length === 0) setIsTyping(false)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              handleSendMsg()
+                            }
+                          }}
+                          placeholder="Écrire un message..."
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-amber-500/50"
+                        />
+                        <button 
+                          type="button"
+                          onClick={(e) => {
                             e.preventDefault()
                             handleSendMsg()
-                          }
-                        }}
-                        placeholder="Écrire un message..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-amber-500/50"
-                      />
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          handleSendMsg()
-                        }}
-                        disabled={!newMsg.trim()}
-                        className="p-2 bg-amber-600 text-black rounded-xl hover:bg-amber-500 transition-all disabled:opacity-50 flex items-center justify-center min-w-[40px]"
-                      >
-                        <LucideSend size={18} />
-                      </button>
+                          }}
+                          disabled={!newMsg.trim()}
+                          className="p-2 bg-amber-600 text-black rounded-xl hover:bg-amber-500 transition-all disabled:opacity-50 flex items-center justify-center min-w-[40px]"
+                        >
+                          <LucideSend size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
