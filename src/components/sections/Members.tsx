@@ -94,6 +94,13 @@ const Members: React.FC = () => {
   const getMemberBadges = (m: DiscordUser) => {
     const badges = []
     
+    const isStaff = m.roles.some(roleId => [
+      DISCORD_CONFIG.ROLES.OWNER,
+      DISCORD_CONFIG.ROLES.CO_OWNER,
+      DISCORD_CONFIG.ROLES.ADMIN,
+      DISCORD_CONFIG.ROLES.STAFF
+    ].includes(roleId))
+
     // Add premium tier badges based on selection
     const tiers = [
       { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
@@ -102,15 +109,16 @@ const Members: React.FC = () => {
     ]
     
     const featuredIds = m.featured_badges || []
+    const memberTier = isStaff ? 3 : (m.premium_tier || 0)
     
     if (featuredIds.length === 0) {
       // Default behavior: only show the highest tier badge they have access to
-      const highestTier = tiers.filter(t => t.tier <= (m.premium_tier || 0)).pop()
+      const highestTier = tiers.filter(t => t.tier <= memberTier).pop()
       if (highestTier) badges.push(highestTier)
     } else {
       // Show all selected badges they have access to
       tiers.forEach(t => {
-        if (t.tier <= (m.premium_tier || 0) && featuredIds.includes(t.id)) {
+        if (t.tier <= memberTier && featuredIds.includes(t.id)) {
           badges.push(t)
         }
       })

@@ -319,29 +319,37 @@ const Dashboard: React.FC = () => {
   const isVip = isStaff || isVipOnDiscord || (user?.premium_tier || 0) >= 1
 
   const getAllBadges = () => {
-    const badges = []
-    
-    // Add premium tier badges based on selection
-    const tiers = [
-      { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-      { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
-      { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
-    ]
-    
-    const featuredIds = user?.featured_badges || []
-    
-    if (featuredIds.length === 0) {
-      // Default behavior: only show the highest tier badge they have access to
-      const highestTier = tiers.filter(t => t.tier <= (user?.premium_tier || 0)).pop()
-      if (highestTier) badges.push(highestTier)
-    } else {
-      // Show all selected badges they have access to
-      tiers.forEach(t => {
-        if (t.tier <= (user?.premium_tier || 0) && featuredIds.includes(t.id)) {
-          badges.push(t)
-        }
-      })
-    }
+      const badges = []
+      
+      const isStaff = user?.roles?.some(roleId => [
+        DISCORD_CONFIG.ROLES.OWNER,
+        DISCORD_CONFIG.ROLES.CO_OWNER,
+        DISCORD_CONFIG.ROLES.ADMIN,
+        DISCORD_CONFIG.ROLES.STAFF
+      ].includes(roleId))
+
+      // Add premium tier badges based on selection
+      const tiers = [
+        { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+        { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
+        { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
+      ]
+      
+      const featuredIds = user?.featured_badges || []
+      const userTier = isStaff ? 3 : (user?.premium_tier || 0)
+      
+      if (featuredIds.length === 0) {
+        // Default behavior: only show the highest tier badge they have access to
+        const highestTier = tiers.filter(t => t.tier <= userTier).pop()
+        if (highestTier) badges.push(highestTier)
+      } else {
+        // Show all selected badges they have access to
+        tiers.forEach(t => {
+          if (t.tier <= userTier && featuredIds.includes(t.id)) {
+            badges.push(t)
+          }
+        })
+      }
     
     // Add all matching discord roles
     if (user?.roles) {
