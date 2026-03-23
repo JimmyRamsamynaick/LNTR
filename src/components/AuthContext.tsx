@@ -244,6 +244,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           premium_since: updatedUser.premium_since || null,
           incognito_mode: updatedUser.incognito_mode || false,
           gold_nickname: updatedUser.gold_nickname !== false,
+          custom_url: updatedUser.custom_url || null,
           last_seen: new Date().toISOString()
         })
       if (error) {

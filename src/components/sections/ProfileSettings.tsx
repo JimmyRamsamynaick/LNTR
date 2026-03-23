@@ -560,14 +560,14 @@ const ProfileSettings: React.FC = () => {
                           URL Personnalisée
                           {!hasPackEternel && <LucideCrown size={12} className="text-amber-500" />}
                         </h4>
-                        <p className="text-xs text-gray-500">Créez un lien court unique vers votre profil (lntr.site/u/votre-pseudo).</p>
+                        <p className="text-xs text-gray-500">Créez un lien court unique vers votre profil ({window.location.hostname.includes('ngrok') ? 'ngrok.dev' : 'lntr.site'}/u/votre-pseudo).</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 p-4 bg-black/20 rounded-xl border border-white/5">
-                      <span className="text-gray-500 font-mono text-sm">lntr.site/u/</span>
+                      <span className="text-gray-500 font-mono text-sm">{window.location.hostname.includes('ngrok') ? 'ngrok.dev' : 'lanterne-nocturne.duckdns.org'}/u/</span>
                       <input 
                         type="text" 
                         placeholder="votre-pseudo"

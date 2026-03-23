@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare } from 'lucide-react'
+import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare, LucideUserPlus, LucideUserMinus } from 'lucide-react'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { DiscordUser, useAuth } from '../AuthContext'
 import StatusIndicator from '../ui/StatusIndicator'
@@ -53,6 +53,8 @@ const UserProfile: React.FC = () => {
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followCount, setFollowCount] = useState(0)
   const [showChatModal, setShowChatModal] = useState(false)
   const [showShoutModal, setShowShoutModal] = useState(false)
   const [chatMessage, setChatMessage] = useState('')
@@ -88,6 +90,26 @@ const UserProfile: React.FC = () => {
           }
           setMember(userData)
           localStorage.setItem(`profile_${id}`, JSON.stringify(userData))
+        }
+
+        // Fetch follow status
+        if (currentUser && id) {
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('*')
+            .eq('follower_id', currentUser.id)
+            .eq('following_id', id)
+            .single()
+          setIsFollowing(!!followData)
+        }
+
+        // Fetch followers count
+        if (id) {
+          const { count } = await supabase
+            .from('follows')
+            .select('*', { count: 'exact', head: true })
+            .eq('following_id', id)
+          setFollowCount(count || 0)
         }
       } catch (e) {
         console.error('Failed to fetch member:', e)
@@ -169,7 +191,44 @@ const UserProfile: React.FC = () => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [id])
+  }, [id, currentUser])
+
+  const handleFollow = async () => {
+    if (!currentUser || !member || currentUser.id === member.id) return
+
+    try {
+      if (isFollowing) {
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', member.id)
+        
+        setIsFollowing(false)
+        setFollowCount(prev => Math.max(0, prev - 1))
+      } else {
+        await supabase
+          .from('follows')
+          .insert({
+            follower_id: currentUser.id,
+            following_id: member.id
+          })
+        
+        setIsFollowing(true)
+        setFollowCount(prev => prev + 1)
+
+        // Notification
+        await supabase.from('notifications').insert({
+          user_id: member.id,
+          from_username: currentUser.username,
+          type: 'follow',
+          content: 'a commencé à vous suivre !'
+        })
+      }
+    } catch (e) {
+      console.error('Follow failed:', e)
+    }
+  }
 
   const handleAddComment = async () => {
     if (!currentUser || !newComment.trim()) return
@@ -533,16 +592,31 @@ const UserProfile: React.FC = () => {
               <p className="text-gray-600 font-mono text-[10px] opacity-40 uppercase tracking-[0.2em] mb-8">ID: {member.id}</p>
 
               {/* Flames Button */}
-              <div className="flex justify-center mb-4 relative z-10">
-                <button 
-                  onClick={handleFlame}
-                  disabled={!currentUser || currentUser.id === member.id}
-                  className={`w-full py-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 group transition-all hover:bg-white/10 active:scale-95 ${getFlameColor(member.flames_count || 0)}`}
-                >
-                  <LucideFlame size={20} className={`${(member.flames_count || 0) > 0 ? 'fill-current animate-pulse' : ''}`} />
-                  <span className="font-bold uppercase tracking-widest text-sm">{(member.flames_count || 0)} Flammes</span>
-                </button>
-              </div>
+                <div className="grid grid-cols-2 gap-3 mb-4 relative z-10">
+                  <button 
+                    onClick={handleFlame}
+                    disabled={!currentUser || currentUser.id === member.id}
+                    className={`py-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 group transition-all hover:bg-white/10 active:scale-95 ${getFlameColor(member.flames_count || 0)}`}
+                  >
+                    <LucideFlame size={20} className={`${(member.flames_count || 0) > 0 ? 'fill-current animate-pulse' : ''}`} />
+                    <span className="font-bold uppercase tracking-widest text-[10px] md:text-xs">{(member.flames_count || 0)} Flammes</span>
+                  </button>
+
+                  <button 
+                    onClick={handleFollow}
+                    disabled={!currentUser || currentUser.id === member.id}
+                    className={`py-4 rounded-2xl flex items-center justify-center gap-3 group transition-all active:scale-95 ${
+                      isFollowing 
+                        ? 'bg-amber-500 text-black font-black border border-amber-500' 
+                        : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    {isFollowing ? <LucideUserMinus size={20} /> : <LucideUserPlus size={20} />}
+                    <span className="font-bold uppercase tracking-widest text-[10px] md:text-xs">
+                      {isFollowing ? 'Suivi' : 'Suivre'} ({followCount})
+                    </span>
+                  </button>
+                </div>
             </div>
           </div>
 
