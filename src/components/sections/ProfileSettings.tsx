@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideUser, LucidePalette, LucideShield, LucideSave, LucideCheckCircle, LucideCrown, LucideSparkles, LucideArrowLeft, LucideFlame, LucideUpload, LucideLoader2, LucideTrash2 } from 'lucide-react'
+import { LucideUser, LucidePalette, LucideShield, LucideSave, LucideCheckCircle, LucideCrown, LucideSparkles, LucideArrowLeft, LucideFlame, LucideUpload, LucideLoader2, LucideTrash2, LucideLink } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { supabase } from '../../lib/supabase'

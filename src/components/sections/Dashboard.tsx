@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX } from 'lucide-react'
+import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideMinimize2, LucideMaximize2 } from 'lucide-react'
 import { Navigate, Link } from 'react-router-dom'
 import StatusIndicator from '../ui/StatusIndicator'
 import Shoutbox from '../ui/Shoutbox'
@@ -233,21 +233,20 @@ const Dashboard: React.FC = () => {
         const newMsg = payload.new
         // Only update if message belongs to THIS conversation
         const isFromContact = newMsg.from_id === selectedChat.id && newMsg.to_id === user.id
-        const isFromMe = newMsg.from_id === user.id && newMsg.to_id === selectedChat.id
         
-        if (isFromContact || isFromMe) {
+        // We only add messages from the contact in realtime, 
+        // because our own messages are added instantly via optimistic UI
+        if (isFromContact) {
           setChatMessages(prev => [...prev, newMsg])
           
-          // If it's from contact, mark it read immediately since we are looking at the chat
-          if (isFromContact) {
-            supabase
-              .from('private_messages')
-              .update({ read: true })
-              .eq('id', newMsg.id)
-              .then(() => {
-                setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, unreadCount: 0 } : c))
-              })
-          }
+          // Mark it read immediately since we are looking at the chat
+          supabase
+            .from('private_messages')
+            .update({ read: true })
+            .eq('id', newMsg.id)
+            .then(() => {
+              setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, unreadCount: 0 } : c))
+            })
         }
       })
       .subscribe()
@@ -260,12 +259,30 @@ const Dashboard: React.FC = () => {
   const handleSendMsg = async () => {
     if (!user || !selectedChat || !newMsg.trim()) return
 
+    const messageContent = newMsg.trim()
+    const tempId = Math.random().toString(36).substring(7)
+    
+    // Optimistic UI Update
+    const optimisticMsg = {
+      id: tempId,
+      from_id: user.id,
+      to_id: selectedChat.id,
+      content: messageContent,
+      from_username: user.username,
+      read: false,
+      created_at: new Date().toISOString()
+    }
+    
+    setChatMessages(prev => [...prev, optimisticMsg])
+    setNewMsg('')
+    setIsTyping(false)
+
     const { error: msgError } = await supabase
       .from('private_messages')
       .insert({
         from_id: user.id,
         to_id: selectedChat.id,
-        content: newMsg,
+        content: messageContent,
         from_username: user.username,
         read: false
       })
@@ -278,13 +295,12 @@ const Dashboard: React.FC = () => {
           user_id: selectedChat.id,
           from_username: user.username,
           type: 'message',
-          content: newMsg.substring(0, 50) + (newMsg.length > 50 ? '...' : '')
+          content: messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : '')
         })
-
-      setNewMsg('')
-      setIsTyping(false)
-      // fetchData() // On retire cet appel car le realtime va maintenant s'en charger proprement
     } else {
+      // Rollback on error
+      setChatMessages(prev => prev.filter(m => m.id !== tempId))
+      setNewMsg(messageContent)
       console.error('Erreur lors de l\'envoi du message:', msgError)
       alert(`Erreur: ${msgError.message}`)
     }
@@ -306,6 +322,31 @@ const Dashboard: React.FC = () => {
   const handleReplyComment = async (commentId: string) => {
     if (!user || !replyContent.trim()) return
 
+    const content = replyContent.trim()
+    const tempId = Math.random().toString(36).substring(7)
+    
+    // Optimistic UI Update
+    const optimisticReply = {
+      id: tempId,
+      profile_id: user.id,
+      user_id: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      content: content,
+      parent_id: commentId,
+      created_at: new Date().toISOString()
+    }
+
+    setProfileComments(prev => prev.map(c => {
+      if (c.id === commentId) {
+        return { ...c, replies: [...(c.replies || []), optimisticReply] }
+      }
+      return c
+    }))
+
+    setReplyContent('')
+    setReplyingToComment(null)
+
     try {
       const { error } = await supabase
         .from('profile_comments')
@@ -314,16 +355,22 @@ const Dashboard: React.FC = () => {
           user_id: user.id,
           username: user.username,
           avatar: user.avatar,
-          content: replyContent,
+          content: content,
           parent_id: commentId
         })
 
       if (error) throw error
-
-      setReplyContent('')
-      setReplyingToComment(null)
-      fetchData() // Refresh comments
+      fetchData() // Refresh to get real ID and sync
     } catch (e) {
+      // Rollback on error
+      setProfileComments(prev => prev.map(c => {
+        if (c.id === commentId) {
+          return { ...c, replies: (c.replies || []).filter((r: any) => r.id !== tempId) }
+        }
+        return c
+      }))
+      setReplyContent(content)
+      setReplyingToComment(commentId)
       console.error('Failed to reply to comment:', e)
       alert('Erreur lors de la réponse au commentaire.')
     }
