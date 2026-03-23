@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare, LucideUserPlus, LucideUserMinus } from 'lucide-react'
+import { LucideArrowLeft, LucideCrown, LucideShieldCheck, LucideShield, LucideZap, LucideUsers, LucideActivity, LucideMessageCircle, LucideSend, LucideTrash2, LucideReply, LucideX, LucideSparkles, LucideFlame, LucideMessageSquare, LucideUserPlus, LucideUserMinus, LucideGift, LucideHeart } from 'lucide-react'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { DiscordUser, useAuth } from '../AuthContext'
 import StatusIndicator from '../ui/StatusIndicator'
@@ -57,8 +57,13 @@ const UserProfile: React.FC = () => {
   const [followCount, setFollowCount] = useState(0)
   const [showChatModal, setShowChatModal] = useState(false)
   const [showShoutModal, setShowShoutModal] = useState(false)
+  const [showGiftModal, setShowGiftModal] = useState(false)
+  const [gifts, setGifts] = useState<any[]>([])
   const [chatMessage, setChatMessage] = useState('')
   const [shoutMessage, setShoutMessage] = useState('')
+  const [giftMessage, setGiftMessage] = useState('')
+  const [selectedGiftType, setSelectedGiftType] = useState<'bougie' | 'etoile' | 'lanterne' | null>(null)
+  const [isSendingGift, setIsSendingGift] = useState(false)
 
   useEffect(() => {
     const fetchMember = async () => {
@@ -110,6 +115,16 @@ const UserProfile: React.FC = () => {
             .select('*', { count: 'exact', head: true })
             .eq('following_id', id)
           setFollowCount(count || 0)
+        }
+
+        // Fetch gifts
+        if (id) {
+          const { data: giftsData } = await supabase
+            .from('profile_gifts')
+            .select('*')
+            .eq('to_id', id)
+            .order('created_at', { ascending: false })
+          setGifts(giftsData || [])
         }
       } catch (e) {
         console.error('Failed to fetch member:', e)
@@ -227,6 +242,63 @@ const UserProfile: React.FC = () => {
       }
     } catch (e) {
       console.error('Follow failed:', e)
+    }
+  }
+
+  const handleSendGift = async () => {
+    if (!currentUser || !member || !selectedGiftType || isSendingGift) return
+
+    setIsSendingGift(true)
+    try {
+      // 1. Check if a gift was sent in the last 7 days
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+      const { data: recentGift } = await supabase
+        .from('profile_gifts')
+        .select('*')
+        .eq('from_id', currentUser.id)
+        .eq('to_id', member.id)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .limit(1)
+
+      if (recentGift && recentGift.length > 0) {
+        alert('Vous ne pouvez envoyer qu\'un seul cadeau par semaine à ce membre !')
+        return
+      }
+
+      // 2. Send gift
+      const { data: newGift, error } = await supabase
+        .from('profile_gifts')
+        .insert({
+          from_id: currentUser.id,
+          to_id: member.id,
+          gift_type: selectedGiftType,
+          message: giftMessage.trim() || null
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // 3. Notification
+      await supabase.from('notifications').insert({
+        user_id: member.id,
+        from_username: currentUser.username,
+        type: 'gift',
+        content: `vous a offert un cadeau : ${selectedGiftType === 'bougie' ? 'Bougie' : selectedGiftType === 'etoile' ? 'Étoile' : 'Lanterne Rare'} !`
+      })
+
+      setGifts(prev => [newGift, ...prev])
+      setShowGiftModal(false)
+      setSelectedGiftType(null)
+      setGiftMessage('')
+      alert('Cadeau envoyé avec succès !')
+    } catch (e) {
+      console.error('Gift failed:', e)
+      alert('Erreur lors de l\'envoi du cadeau.')
+    } finally {
+      setIsSendingGift(false)
     }
   }
 
@@ -603,22 +675,32 @@ const UserProfile: React.FC = () => {
                   </button>
 
                   <button 
-                    onClick={handleFollow}
-                    disabled={!currentUser || currentUser.id === member.id}
-                    className={`py-4 rounded-2xl flex items-center justify-center gap-3 group transition-all active:scale-95 ${
-                      isFollowing 
-                        ? 'bg-amber-500 text-black font-black border border-amber-500' 
-                        : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    {isFollowing ? <LucideUserMinus size={20} /> : <LucideUserPlus size={20} />}
-                    <span className="font-bold uppercase tracking-widest text-[10px] md:text-xs">
-                      {isFollowing ? 'Suivi' : 'Suivre'} ({followCount})
-                    </span>
-                  </button>
-                </div>
+                     onClick={handleFollow}
+                     disabled={!currentUser || currentUser.id === member.id}
+                     className={`py-4 rounded-2xl flex items-center justify-center gap-3 group transition-all active:scale-95 ${
+                       isFollowing 
+                         ? 'bg-amber-500 text-black font-black border border-amber-500' 
+                         : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                     }`}
+                   >
+                     {isFollowing ? <LucideUserMinus size={20} /> : <LucideUserPlus size={20} />}
+                     <span className="font-bold uppercase tracking-widest text-[10px] md:text-xs">
+                       {isFollowing ? 'Suivi' : 'Suivre'} ({followCount})
+                     </span>
+                   </button>
+                 </div>
+
+                 {/* Gift Button */}
+                 <button 
+                   onClick={() => setShowGiftModal(true)}
+                   disabled={!currentUser || currentUser.id === member.id}
+                   className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 text-violet-400 group transition-all hover:bg-white/10 active:scale-95 mb-4"
+                 >
+                   <LucideGift size={20} className="group-hover:scale-110 transition-transform" />
+                   <span className="font-bold uppercase tracking-widest text-sm">Offrir un Cadeau</span>
+                 </button>
+              </div>
             </div>
-          </div>
 
           {/* Details / Activity Area */}
           <div className="lg:col-span-8 xl:col-span-8 space-y-6 md:gap-10">
@@ -648,6 +730,48 @@ const UserProfile: React.FC = () => {
                   </div>
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Badge Site Officiel</span>
                 </div>
+              </div>
+
+              {/* Gift Showcase */}
+              <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 transition-colors col-span-1 sm:col-span-2">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:scale-110 transition-transform">
+                      <LucideHeart className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-black uppercase tracking-widest">Vitrine de Cadeaux</h3>
+                  </div>
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{gifts.length} Cadeaux reçus</span>
+                </div>
+                
+                {gifts.length > 0 ? (
+                  <div className="flex flex-wrap gap-4">
+                    {gifts.map((gift, i) => (
+                      <div key={gift.id} className="relative group/gift">
+                        <div className={`p-4 rounded-2xl border transition-all ${
+                          gift.gift_type === 'bougie' ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' :
+                          gift.gift_type === 'etoile' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                          'bg-violet-500/10 border-violet-500/30 text-violet-400'
+                        }`}>
+                          {gift.gift_type === 'bougie' ? <LucideFlame size={24} /> :
+                           gift.gift_type === 'etoile' ? <LucideSparkles size={24} /> :
+                           <LucideCrown size={24} />}
+                        </div>
+                        
+                        {/* Tooltip on hover */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-night-800 border border-white/10 rounded-xl opacity-0 group-hover/gift:opacity-100 transition-opacity z-50 pointer-events-none shadow-2xl">
+                          <p className="text-[10px] font-bold text-amber-500 uppercase mb-1">Offert par {gift.from_username || 'Anonyme'}</p>
+                          {gift.message && <p className="text-[10px] text-gray-400 italic">"{gift.message}"</p>}
+                          <p className="text-[8px] text-gray-600 mt-2">{new Date(gift.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-10 text-center border-2 border-dashed border-white/5 rounded-2xl">
+                    <p className="text-gray-600 text-sm italic">"Aucun cadeau dans la vitrine pour le moment..."</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -785,6 +909,77 @@ const UserProfile: React.FC = () => {
                         <LucideSend size={18} /> Murmurer
                       </button>
                     </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* Gift Modal */}
+            <AnimatePresence>
+              {showGiftModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="w-full max-w-lg bg-night-800 border border-white/10 rounded-3xl p-8 relative shadow-2xl"
+                  >
+                    <button 
+                      onClick={() => setShowGiftModal(false)}
+                      className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+                    >
+                      <LucideX size={24} />
+                    </button>
+                    
+                    <h3 className="text-2xl font-serif font-bold mb-2 text-violet-400 text-center">Offrir un Cadeau</h3>
+                    <p className="text-gray-500 text-sm mb-8 italic text-center">"Une petite attention pour éclairer la nuit d'un veilleur."</p>
+                    
+                    <div className="grid grid-cols-3 gap-4 mb-8">
+                      {[
+                        { id: 'bougie', icon: LucideFlame, label: 'Bougie', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+                        { id: 'etoile', icon: LucideSparkles, label: 'Étoile', color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
+                        { id: 'lanterne', icon: LucideCrown, label: 'Lanterne', color: 'text-violet-400', bgColor: 'bg-violet-400/10' }
+                      ].map((gift) => (
+                        <button
+                          key={gift.id}
+                          onClick={() => setSelectedGiftType(gift.id as any)}
+                          className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${
+                            selectedGiftType === gift.id 
+                              ? `bg-white/10 border-violet-500 scale-105 ${gift.color}` 
+                              : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'
+                          }`}
+                        >
+                          <gift.icon size={32} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">{gift.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <textarea
+                      value={giftMessage}
+                      onChange={(e) => setGiftMessage(e.target.value)}
+                      placeholder="Petit mot doux (facultatif)..."
+                      maxLength={100}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-500 focus:border-violet-500/50 outline-none transition-all resize-none min-h-[100px] mb-6"
+                    />
+                    
+                    <div className="flex justify-end gap-4">
+                      <button 
+                        onClick={() => setShowGiftModal(false)}
+                        className="px-6 py-3 text-gray-500 hover:text-white font-bold transition-colors"
+                      >
+                        Annuler
+                      </button>
+                      <button 
+                        onClick={handleSendGift}
+                        disabled={!selectedGiftType || isSendingGift}
+                        className="px-8 py-3 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-500 transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {isSendingGift ? <LucideLoader2 className="animate-spin" size={18} /> : <LucideGift size={18} />}
+                        Envoyer
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-gray-600 text-center mt-4 uppercase tracking-tighter">Limite : 1 cadeau par semaine par membre</p>
                   </motion.div>
                 </div>
               )}
