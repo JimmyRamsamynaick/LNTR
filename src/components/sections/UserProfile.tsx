@@ -57,8 +57,20 @@ const UserProfile: React.FC = () => {
   const [followCount, setFollowCount] = useState(0)
   const [showChatModal, setShowChatModal] = useState(false)
   const [showShoutModal, setShowShoutModal] = useState(false)
+  // Charger les cadeaux depuis le cache
+  const [gifts, setGifts] = useState<any[]>(() => {
+    const cached = localStorage.getItem(`gifts_${id}`)
+    return cached ? JSON.parse(cached) : []
+  })
+
+  const [newComment, setNewComment] = useState('')
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyContent, setReplyContent] = useState('')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followCount, setFollowCount] = useState(0)
+  const [showChatModal, setShowChatModal] = useState(false)
+  const [showShoutModal, setShowShoutModal] = useState(false)
   const [showGiftModal, setShowGiftModal] = useState(false)
-  const [gifts, setGifts] = useState<any[]>([])
   const [chatMessage, setChatMessage] = useState('')
   const [shoutMessage, setShoutMessage] = useState('')
   const [giftMessage, setGiftMessage] = useState('')
@@ -66,8 +78,6 @@ const UserProfile: React.FC = () => {
   const [isSendingGift, setIsSendingGift] = useState(false)
 
   useEffect(() => {
-    const fetchMember = async () => {
-      try {
         const { data, error } = await supabase
           .from('members')
           .select('*')
@@ -124,7 +134,10 @@ const UserProfile: React.FC = () => {
             .select('*')
             .eq('to_id', id)
             .order('created_at', { ascending: false })
-          setGifts(giftsData || [])
+          if (giftsData) {
+            setGifts(giftsData)
+            localStorage.setItem(`gifts_${id}`, JSON.stringify(giftsData))
+          }
         }
       } catch (e) {
         console.error('Failed to fetch member:', e)

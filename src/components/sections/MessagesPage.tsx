@@ -8,12 +8,27 @@ const MessagesPage: React.FC = () => {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
   
-  const [chats, setChats] = React.useState<any[]>([])
+  const [chats, setChats] = React.useState<any[]>(() => {
+    const cached = localStorage.getItem(`cache_chats_${user?.id}`)
+    return cached ? JSON.parse(cached) : []
+  })
   const [selectedChat, setSelectedChat] = React.useState<any | null>(null)
-  const [chatMessages, setChatMessages] = React.useState<any[]>([])
+  const [chatMessages, setChatMessages] = React.useState<any[]>(() => {
+    // We don't cache individual chat messages for now to keep it simple, 
+    // but the chat list is cached.
+    return []
+  })
   const [newMsg, setNewMsg] = React.useState('')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [isTyping, setIsTyping] = React.useState(false)
+
+  // Load chat list from cache on mount
+  React.useEffect(() => {
+    if (user?.id) {
+      const cached = localStorage.getItem(`cache_chats_${user.id}`)
+      if (cached) setChats(JSON.parse(cached))
+    }
+  }, [user?.id])
 
   const fetchData = React.useCallback(async () => {
     if (!user) return
@@ -56,31 +71,36 @@ const MessagesPage: React.FC = () => {
           chatMap.set(contactId, { ...current, unreadCount: current.unreadCount + 1 })
         }
       })
-      setChats(Array.from(chatMap.values()))
+      const finalChats = Array.from(chatMap.values())
+      setChats(finalChats)
+      localStorage.setItem(`cache_chats_${user.id}`, JSON.stringify(finalChats))
     }
   }, [user?.id])
 
   React.useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
+    
     fetchData()
 
-    // Global realtime channel for new messages (to update chat list unread counts)
+    // Global realtime channel for new messages
     const channel = supabase
       .channel('global_messages')
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'private_messages',
-        filter: `to_id=eq.${user.id}`
-      }, () => {
-        fetchData() // Refresh chat list when a new message arrives for us
+        table: 'private_messages'
+      }, (payload: any) => {
+        // Only refresh if the message is for US
+        if (payload.new.to_id === user.id) {
+          fetchData()
+        }
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user, fetchData])
+  }, [user?.id, fetchData])
 
   React.useEffect(() => {
     if (!selectedChat || !user) return
