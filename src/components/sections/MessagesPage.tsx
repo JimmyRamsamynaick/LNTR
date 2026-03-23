@@ -63,6 +63,23 @@ const MessagesPage: React.FC = () => {
   React.useEffect(() => {
     if (!user) return
     fetchData()
+
+    // Global realtime channel for new messages (to update chat list unread counts)
+    const channel = supabase
+      .channel('global_messages')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'private_messages',
+        filter: `to_id=eq.${user.id}`
+      }, () => {
+        fetchData() // Refresh chat list when a new message arrives for us
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [user, fetchData])
 
   React.useEffect(() => {
@@ -239,14 +256,14 @@ const MessagesPage: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 text-left min-w-0">
+                  <div className="flex-1 text-left min-w-0 flex flex-col justify-center">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-bold text-white truncate">{chat.username}</h4>
-                      <span className="text-[10px] text-gray-600 font-mono">
+                      <h4 className="font-bold text-white truncate text-sm">{chat.username}</h4>
+                      <span className="text-[10px] text-gray-600 font-mono shrink-0 ml-2">
                         {new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 truncate italic font-light">
+                    <p className="text-xs text-gray-500 truncate italic font-light max-w-full">
                       {chat.lastMessage}
                     </p>
                   </div>
