@@ -1,7 +1,6 @@
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideArrowLeft, LucideSend, LucideMail, LucideSearch, LucideMoreVertical, LucideX, LucideMinimize2, LucideMaximize2 } from 'lucide-react'
+import { LucideArrowLeft, LucideSend, LucideMail, LucideSearch, LucideMoreVertical } from 'lucide-react'
 import { Navigate, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
