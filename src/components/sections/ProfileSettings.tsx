@@ -199,16 +199,16 @@ const ProfileSettings: React.FC = () => {
                     />
                   </div>
                   <h4 
-                    className={`text-2xl font-bold mb-1 ${hasPackEternel && goldNickname ? 'nickname-golden-animated' : ''}`} 
+                    className={`text-2xl font-bold mb-1 ${hasPackEternel && goldNickname ? 'nickname-golden-animated' : (hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 ? 'nickname-gradient-animated' : '')}`} 
                     style={{ 
                       background: hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 
-                        ? `linear-gradient(to right, ${nicknameGradientColor1}, ${nicknameGradientColor2})` 
+                        ? `linear-gradient(to right, ${nicknameGradientColor1} 0%, ${nicknameGradientColor2} 50%, ${nicknameGradientColor1} 100%)` 
                         : 'none',
-                      WebkitBackgroundClip: hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 ? 'text' : 'initial',
-                      color: hasPackEternel && goldNickname 
+                      WebkitBackgroundClip: (hasPackEternel && goldNickname) || (hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2) ? 'text' : 'initial',
+                      color: (hasPackEternel && goldNickname) || (hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2)
                         ? 'transparent' 
-                        : (hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2 ? 'transparent' : (displayNameColor || '#FFFFFF')),
-                      WebkitTextFillColor: hasPackEternel && (goldNickname || (!goldNickname && nicknameGradientColor1 && nicknameGradientColor2)) ? 'transparent' : 'initial'
+                        : (displayNameColor || '#FFFFFF'),
+                      WebkitTextFillColor: (hasPackEternel && goldNickname) || (hasPackEternel && !goldNickname && nicknameGradientColor1 && nicknameGradientColor2) ? 'transparent' : 'initial'
                     }}
                   >
                     {user.username}

@@ -266,10 +266,10 @@ const Members: React.FC = () => {
                         </div>
 
                         <h3 
-                          className={`text-lg font-bold mb-4 text-center truncate w-full ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
+                          className={`text-lg font-bold mb-4 text-center truncate w-full ${hasGoldNickname ? 'nickname-golden-animated' : (hasGradientNickname ? 'nickname-gradient-animated' : '')}`}
                           style={{ 
                             background: hasGradientNickname 
-                              ? `linear-gradient(to right, ${m.nicknameGradientColor1}, ${m.nicknameGradientColor2})` 
+                              ? `linear-gradient(to right, ${m.nicknameGradientColor1} 0%, ${m.nicknameGradientColor2} 50%, ${m.nicknameGradientColor1} 100%)` 
                               : (hasGoldNickname ? undefined : 'none'),
                             WebkitBackgroundClip: (hasGradientNickname || hasGoldNickname) ? 'text' : 'initial',
                             color: (hasGoldNickname || hasGradientNickname) ? 'transparent' : (m.displayNameColor || '#FFFFFF'),

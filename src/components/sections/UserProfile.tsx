@@ -470,10 +470,10 @@ const UserProfile: React.FC = () => {
               </div>
 
               <h2 
-                className={`text-xl md:text-2xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${hasGoldNickname ? 'nickname-golden-animated' : ''}`} 
+                className={`text-xl md:text-2xl font-serif font-black mb-2 tracking-tight truncate relative z-10 px-2 ${hasGoldNickname ? 'nickname-golden-animated' : (hasGradientNickname ? 'nickname-gradient-animated' : '')}`} 
                 style={{ 
                   background: hasGradientNickname 
-                    ? `linear-gradient(to right, ${member.nicknameGradientColor1}, ${member.nicknameGradientColor2})` 
+                    ? `linear-gradient(to right, ${member.nicknameGradientColor1} 0%, ${member.nicknameGradientColor2} 50%, ${member.nicknameGradientColor1} 100%)` 
                     : (hasGoldNickname ? undefined : 'none'),
                   WebkitBackgroundClip: (hasGradientNickname || hasGoldNickname) ? 'text' : 'initial',
                   color: (hasGoldNickname || hasGradientNickname) ? 'transparent' : (member.displayNameColor || '#FFFFFF'),

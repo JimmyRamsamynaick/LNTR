@@ -441,10 +441,10 @@ const Dashboard: React.FC = () => {
                 </div>
                 
                 <h2 
-                  className={`text-xl md:text-2xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : ''}`}
+                  className={`text-xl md:text-2xl font-serif font-black mb-1 tracking-tight truncate w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : (hasGradientNickname ? 'nickname-gradient-animated' : '')}`}
                   style={{ 
                     background: hasGradientNickname 
-                      ? `linear-gradient(to right, ${user.nicknameGradientColor1}, ${user.nicknameGradientColor2})` 
+                      ? `linear-gradient(to right, ${user.nicknameGradientColor1} 0%, ${user.nicknameGradientColor2} 50%, ${user.nicknameGradientColor1} 100%)` 
                       : (hasGoldNickname ? undefined : 'none'),
                     WebkitBackgroundClip: (hasGradientNickname || hasGoldNickname) ? 'text' : 'initial',
                     color: (hasGoldNickname || hasGradientNickname) ? 'transparent' : (user.displayNameColor || '#FFFFFF'),
