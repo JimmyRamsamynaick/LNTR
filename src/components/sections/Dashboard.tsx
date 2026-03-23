@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideMinimize2, LucideMaximize2, LucideHeart, LucideExternalLink } from 'lucide-react'
+import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideHeart, LucideExternalLink } from 'lucide-react'
 import { Navigate, Link } from 'react-router-dom'
 import StatusIndicator from '../ui/StatusIndicator'
 import Shoutbox from '../ui/Shoutbox'
@@ -833,7 +833,7 @@ const Dashboard: React.FC = () => {
                     <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar max-h-[200px]">
                       {chatMessages.map((m) => (
                         <div key={m.id} className={`flex ${m.from_id === user.id ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] p-3 rounded-2xl ${isChatExpanded ? 'text-sm' : 'text-xs'} ${
+                          <div className={`max-w-[80%] p-3 rounded-2xl text-xs ${
                             m.from_id === user.id 
                               ? 'bg-amber-600 text-black font-medium rounded-tr-none' 
                               : 'bg-white/10 text-white rounded-tl-none border border-white/5'
