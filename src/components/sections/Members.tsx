@@ -35,7 +35,7 @@ const Members: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('members')
-          .select('*')
+          .select('id, username, avatar, roles, status, bio, banner_color, banner_url, display_name_color, nickname_gradient_color1, nickname_gradient_color2, featured_badges, premium_tier, gold_nickname, flames_count')
           .order('last_seen', { ascending: false })
 
         if (error) throw error
@@ -290,6 +290,10 @@ const Members: React.FC = () => {
                             </div>
                           ))}
                         </div>
+                      </div>
+                      <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs font-bold text-gray-500 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
+                        <LucideFlame size={14} className="text-orange-500/70" />
+                        <span>{m.flames_count || 0}</span>
                       </div>
                     </Link>
                   </motion.div>

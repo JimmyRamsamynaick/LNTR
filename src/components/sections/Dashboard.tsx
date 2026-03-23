@@ -319,7 +319,7 @@ const Dashboard: React.FC = () => {
     }
   }
 
-  const quickReplies = ["Hello ! Ô×£", "Merci ! Ô£¿", "On joue ?", "À plus tard ! Ô£ô", "Trop cool ! Ô£¿"]
+  const quickReplies = ["Hello ! 👋", "Merci ! ✨", "On joue ?", "À plus tard ! 🌙", "Trop cool ! 🔥"]
 
   const markAsRead = async () => {
     if (user) {
@@ -704,44 +704,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Recent Visitors - Only for Tier 3 / Staff */}
-              {isEternel && (
-                <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md relative z-10">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 rounded-xl bg-blue-600/20 text-blue-400">
-                      <LucideUsers className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold">Visiteurs Récents</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {recentVisitors.length === 0 ? (
-                      <p className="text-gray-600 text-sm italic py-4">Aucun visiteur récent.</p>
-                    ) : (
-                      recentVisitors.map((v) => (
-                        <Link 
-                          key={v.id} 
-                          to={`/profile/${v.viewer_id}`}
-                          title={`${v.viewer_username} - ${new Date(v.viewed_at).toLocaleDateString()}`}
-                          className="relative group"
-                        >
-                          <img
-                            src={v.viewer_avatar 
-                              ? `https://cdn.discordapp.com/avatars/${v.viewer_id}/${v.viewer_avatar}.png?size=64`
-                              : `https://cdn.discordapp.com/embed/avatars/${parseInt(v.viewer_id) % 5}.png`
-                            }
-                            alt={v.viewer_username}
-                            className="w-10 h-10 rounded-full border border-white/10 group-hover:border-amber-500/50 transition-colors"
-                          />
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-night-900 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-                      ))
-                    )}
-                  </div>
-                  <p className="text-[10px] text-gray-600 mt-4 uppercase tracking-widest font-bold">
-                    Derniers 7 jours • Tier 3 Exclusif
-                  </p>
-                </div>
-              )}
+
 
               <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-300 backdrop-blur-md flex flex-col min-h-[300px] relative z-10">
                 {!selectedChat ? (

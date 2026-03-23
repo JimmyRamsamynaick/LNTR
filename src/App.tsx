@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
 import Hero from './components/sections/Hero'
 import Statistics from './components/sections/Statistics'
 import WhyJoin from './components/sections/WhyJoin'
@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const Header: React.FC = () => {
   const { user, login, logout } = useAuth()
+  const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
   const [hasNewNotif, setHasNewNotif] = React.useState(false)
   const [toast, setToast] = React.useState<{ id: string, from: string, content: string, type: string } | null>(null)
@@ -75,6 +76,10 @@ const Header: React.FC = () => {
     { name: 'Membres', path: '/members' },
     { name: 'Boutique', path: '/shop' },
   ]
+
+  // Hide header on specific pages AFTER all hooks
+  const isMessagesPage = location.pathname === '/messages'
+  if (isMessagesPage) return null
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-night-900/40 backdrop-blur-xl border-b border-white/5 py-4 px-6 md:px-12">
@@ -254,68 +259,75 @@ const LandingPage: React.FC = () => (
   </main>
 )
 
+const MainContent: React.FC = () => {
+
+  return (
+    <div className="relative min-h-screen bg-night-900 overflow-x-hidden selection:bg-amber-500/30">
+      <Backgrounds />
+      <Effects />
+      <Header />
+
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/callback" element={<AuthCallback />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/members" element={<Members />} />
+        <Route path="/profile/:id" element={<UserProfile />} />
+        <Route path="/u/:username" element={<ProfileRedirect />} />
+        <Route path="/settings" element={<ProfileSettings />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/legal" element={<Legal />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+
+      <footer className="py-20 px-6 md:px-12 bg-black/40 border-t border-white/5 relative z-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-3 mb-6">
+              <LucideFlame className="text-amber-500 w-8 h-8" />
+              <span className="text-2xl font-serif font-bold text-white tracking-tight">La Lanterne Nocturne</span>
+            </div>
+            <p className="text-gray-500 max-w-sm leading-relaxed">
+              Un refuge pour les noctambules, une communauté où chaque lumière compte. Rejoignez-nous pour vivre des nuits inoubliables.
+            </p>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-sm">Navigation</h4>
+            <ul className="space-y-4 text-gray-500">
+              <li><Link to="/history" className="hover:text-amber-500 transition-colors">Histoire</Link></li>
+              <li><Link to="/members" className="hover:text-amber-500 transition-colors">Membres</Link></li>
+              <li><Link to="/shop" className="hover:text-amber-500 transition-colors">Boutique</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-sm">Légal</h4>
+            <ul className="space-y-4 text-gray-500">
+              <li><Link to="/legal" className="hover:text-amber-500 transition-colors">CGU</Link></li>
+              <li><Link to="/legal" className="hover:text-amber-500 transition-colors">Confidentialité</Link></li>
+              <li><Link to="/legal" className="hover:text-amber-500 transition-colors">Mentions Légales</Link></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-gray-600 text-sm">&copy; {new Date().getFullYear()} La Lanterne Nocturne. Tous droits réservés.</p>
+          <p className="text-gray-600 text-sm font-serif italic">Une lueur dans l'obscurité.</p>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
         <ScrollToTop />
-        <div className="relative min-h-screen bg-night-900 overflow-x-hidden selection:bg-amber-500/30">
-          <Backgrounds />
-          <Effects />
-          <Header />
-
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/callback" element={<AuthCallback />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/members" element={<Members />} />
-            <Route path="/profile/:id" element={<UserProfile />} />
-            <Route path="/u/:username" element={<ProfileRedirect />} />
-            <Route path="/settings" element={<ProfileSettings />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/messages" element={<MessagesPage />} />
-            <Route path="/legal" element={<Legal />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-
-          <footer className="py-20 px-6 md:px-12 bg-black/40 border-t border-white/5 relative z-10">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-              <div className="md:col-span-2">
-                <div className="flex items-center gap-3 mb-6">
-                  <LucideFlame className="text-amber-500 w-8 h-8" />
-                  <span className="text-2xl font-serif font-bold text-white tracking-tight">La Lanterne Nocturne</span>
-                </div>
-                <p className="text-gray-500 max-w-sm leading-relaxed">
-                  Un refuge pour les noctambules, une communauté où chaque lumière compte. Rejoignez-nous pour vivre des nuits inoubliables.
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-sm">Navigation</h4>
-                <ul className="space-y-4 text-gray-500">
-                  <li><Link to="/history" className="hover:text-amber-500 transition-colors">Histoire</Link></li>
-                  <li><Link to="/members" className="hover:text-amber-500 transition-colors">Membres</Link></li>
-                  <li><Link to="/shop" className="hover:text-amber-500 transition-colors">Boutique</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-sm">Légal</h4>
-                <ul className="space-y-4 text-gray-500">
-                  <li><Link to="/legal" className="hover:text-amber-500 transition-colors">CGU</Link></li>
-                  <li><Link to="/legal" className="hover:text-amber-500 transition-colors">Confidentialité</Link></li>
-                  <li><Link to="/legal" className="hover:text-amber-500 transition-colors">Mentions Légales</Link></li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-              <p className="text-gray-600 text-sm">&copy; {new Date().getFullYear()} La Lanterne Nocturne. Tous droits réservés.</p>
-              <p className="text-gray-600 text-sm font-serif italic">Une lueur dans l'obscurité.</p>
-            </div>
-          </footer>
-        </div>
+        <MainContent />
       </Router>
     </AuthProvider>
   )
