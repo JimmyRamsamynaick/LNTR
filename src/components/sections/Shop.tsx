@@ -15,7 +15,6 @@ const packs = [
     features: [
       'Badge "Éclat Nocturne" sur votre profil',
       'Couleur de pseudo personnalisée sur le site',
-      'Accès aux salons privés sur le site',
       'Soutien direct au projet'
     ]
   },
@@ -31,9 +30,9 @@ const packs = [
     popular: true,
     features: [
       'Tout le Pack Éclat',
+      'Déblocage de tous les animaux (Compagnons)',
       'Bannière de profil personnalisée (Image)',
-      'Badge "Lumière Royale" exclusif',
-      'Accès anticipé aux nouveautés'
+      'Badge "Lumière Royale" exclusif'
     ]
   },
   {
