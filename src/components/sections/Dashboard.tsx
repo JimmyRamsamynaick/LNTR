@@ -1,12 +1,13 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideHeart, LucideExternalLink } from 'lucide-react'
+import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideHeart, LucideExternalLink, LucideMessageSquare } from 'lucide-react'
 import { Navigate, Link } from 'react-router-dom'
 import StatusIndicator from '../ui/StatusIndicator'
 import Shoutbox from '../ui/Shoutbox'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { supabase } from '../../lib/supabase'
+import Companion, { CompanionType, EvolutionStage } from '../ui/Companion'
 
 const roleConfig = [
   { id: DISCORD_CONFIG.ROLES.OWNER, label: 'Owner', icon: LucideCrown, color: 'text-red-500', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
   const [recentVisitors, setRecentVisitors] = React.useState<any[]>([])
   const [profileComments, setProfileComments] = React.useState<any[]>([])
   const [gifts, setGifts] = React.useState<any[]>([])
+  const [companion, setCompanion] = React.useState<any | null>(null)
 
   // Load from cache as soon as user is available
   React.useEffect(() => {
@@ -38,12 +40,14 @@ const Dashboard: React.FC = () => {
       const cachedVisitors = localStorage.getItem(`cache_visitors_${user.id}`)
       const cachedComments = localStorage.getItem(`cache_comments_${user.id}`)
       const cachedGifts = localStorage.getItem(`cache_gifts_${user.id}`)
+      const cachedCompanion = localStorage.getItem(`cache_companion_${user.id}`)
 
       if (cachedNotifs) setNotifications(JSON.parse(cachedNotifs))
       if (cachedChats) setChats(JSON.parse(cachedChats))
       if (cachedVisitors) setRecentVisitors(JSON.parse(cachedVisitors))
       if (cachedComments) setProfileComments(JSON.parse(cachedComments))
       if (cachedGifts) setGifts(JSON.parse(cachedGifts))
+      if (cachedCompanion) setCompanion(JSON.parse(cachedCompanion))
     }
   }, [user?.id])
 
@@ -59,7 +63,7 @@ const Dashboard: React.FC = () => {
     if (!user) return
 
     // Run all fetches in parallel for maximum speed
-    const [notifsRes, commentsRes, msgsRes, giftsRes] = await Promise.all([
+    const [notifsRes, commentsRes, msgsRes, giftsRes, companionRes] = await Promise.all([
       supabase
         .from('notifications')
         .select('*')
@@ -80,8 +84,20 @@ const Dashboard: React.FC = () => {
         .from('profile_gifts')
         .select('*')
         .eq('to_id', user.id)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('user_companions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single()
     ])
+
+    // Update Companion
+    if (companionRes.data) {
+      setCompanion(companionRes.data)
+      localStorage.setItem(`cache_companion_${user.id}`, JSON.stringify(companionRes.data))
+    }
 
     // Update Notifications
     if (notifsRes.data) {
@@ -310,6 +326,9 @@ const Dashboard: React.FC = () => {
           type: 'message',
           content: messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : '')
         })
+
+      // EXP pour le compagnon
+      await supabase.rpc('add_companion_exp', { user_id_param: user.id, exp_amount: 10 })
     } else {
       // Rollback on error
       setChatMessages(prev => prev.filter(m => m.id !== tempId))
@@ -527,6 +546,43 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Companion Card - Dashboard Quick View */}
+            {companion && (
+              <Link to="/settings" className="block group/comp">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-6 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-xl relative overflow-hidden transition-all hover:bg-indigo-500/10"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full pointer-events-none group-hover/comp:bg-indigo-500/10 transition-colors" />
+                  
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="flex-shrink-0 scale-75 origin-left">
+                      <Companion 
+                        type={companion.type as CompanionType} 
+                        stage={companion.evolution_stage as EvolutionStage} 
+                        color={companion.color} 
+                        name={companion.name} 
+                        level={companion.level} 
+                        animate={true}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-black text-white text-sm truncate uppercase tracking-widest">{companion.name}</h4>
+                      <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mb-2">Niveau {companion.level}</p>
+                      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(companion.experience % 1000) / 10}%` }}
+                          className="h-full bg-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            )}
+
             {/* Profile Info Card */}
             <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group shadow-2xl">
               <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-amber-500/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -587,17 +643,24 @@ const Dashboard: React.FC = () => {
 
                 <div className="w-full h-px bg-white/5 mb-8" />
                 
-                <div className="w-full grid grid-cols-2 gap-3">
+                <div className="w-full grid grid-cols-3 gap-3">
+                  <Link to="/messages" className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all group touch-manipulation relative shadow-lg shadow-indigo-500/5">
+                    <LucideMessageSquare className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300 transition-colors">Messages</span>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)] border-2 border-night-900" />
+                  </Link>
+
                   <Link to="/settings" className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-amber-500/30 transition-all group touch-manipulation">
                     <LucideSettings className="w-5 h-5 text-gray-500 group-hover:text-amber-500 group-hover:rotate-90 transition-all duration-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-amber-500 transition-colors">Paramètres</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 group-hover:text-amber-500 transition-colors">Profil</span>
                   </Link>
+                  
                   <button
                     onClick={logout}
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/30 transition-all group touch-manipulation"
                   >
                     <LucideLogOut className="w-5 h-5 text-red-500/50 group-hover:translate-x-1 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-red-500/50">Déconnexion</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-red-500/50">Quitter</span>
                   </button>
                 </div>
               </div>
@@ -608,7 +671,7 @@ const Dashboard: React.FC = () => {
           <div className="lg:col-span-2 space-y-6 md:space-y-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
 
-              <div className={`p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-500 backdrop-blur-md relative shadow-xl ${showStatusMenu ? 'z-50' : 'z-10'}`}>
+              <div className={`p-6 md:p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:border-amber-500/20 transition-all duration-500 backdrop-blur-md relative shadow-xl ${showStatusMenu ? 'z-50' : 'z-10'}`}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-3 rounded-2xl bg-violet-600/20 text-violet-400">
                     <LucideActivity className="w-6 h-6" />
@@ -692,7 +755,9 @@ const Dashboard: React.FC = () => {
                             <p className="text-xs text-gray-300 leading-relaxed">
                               <span className="font-black text-white uppercase tracking-tighter mr-1">{n.from_username}</span> 
                               <span className="font-light opacity-80 italic">
-                                {n.type === 'comment' ? 'a laissé un commentaire sur ton profil.' : 't\'a envoyé un message privé.'}
+                                {n.type === 'comment' ? 'a laissé un commentaire sur ton profil.' : 
+                                 n.type === 'whisper' ? 't\'a envoyé un murmure dans le chat.' :
+                                 't\'a envoyé un message privé.'}
                               </span>
                             </p>
                             <span className="text-[9px] text-gray-600 mt-2 block font-black uppercase tracking-widest italic">{new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -970,15 +1035,15 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Gifts Showcase */}
-            <div className="p-8 md:p-12 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-8">
+            <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-10">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:scale-110 transition-transform">
+                  <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:rotate-12 transition-transform">
                     <LucideHeart className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl font-serif font-black uppercase tracking-widest">Tes Cadeaux Reçus</h3>
+                  <h3 className="text-xl md:text-2xl font-serif font-black uppercase tracking-widest">Tes Cadeaux Reçus</h3>
                 </div>
-                <div className="flex gap-4">
+                <div className="grid grid-cols-3 gap-3 w-full lg:w-auto">
                   {[
                     { type: 'bougie', icon: LucideFlame, color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
                     { type: 'etoile', icon: LucideSparkles, color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
@@ -986,9 +1051,9 @@ const Dashboard: React.FC = () => {
                   ].map(g => {
                     const count = gifts.filter(gift => gift.gift_type === g.type).length
                     return (
-                      <div key={g.type} className={`flex items-center gap-2 px-4 py-2 rounded-xl border border-white/5 ${g.bgColor} ${g.color}`}>
-                        <g.icon size={16} />
-                        <span className="text-sm font-black">{count}</span>
+                      <div key={g.type} className={`flex items-center justify-center gap-2 px-3 py-2 md:px-4 md:py-2 rounded-xl border border-white/5 ${g.bgColor} ${g.color} shadow-lg backdrop-blur-sm transition-all hover:scale-105`}>
+                        <g.icon size={14} className="md:size-4" />
+                        <span className="text-xs md:text-sm font-black">{count}</span>
                       </div>
                     )
                   })}
@@ -996,7 +1061,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {gifts.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4">
                   {gifts.map((gift) => (
                     <div key={gift.id} className="relative group/gift-item">
                       <div className={`p-4 rounded-2xl border border-white/5 transition-all hover:scale-105 ${

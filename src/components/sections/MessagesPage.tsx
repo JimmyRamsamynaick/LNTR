@@ -227,6 +227,9 @@ const MessagesPage: React.FC = () => {
         type: 'message',
         content: msgContent.substring(0, 50) + (msgContent.length > 50 ? '...' : '')
       })
+
+      // EXP pour le compagnon
+      await supabase.rpc('add_companion_exp', { user_id_param: user.id, exp_amount: 10 })
     } catch (err) {
       console.error('Failed to send:', err)
       setMessages(prev => prev.filter(m => m.id !== tempId))
@@ -265,7 +268,7 @@ const MessagesPage: React.FC = () => {
             <Link to="/dashboard" className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">
               <LucideArrowLeft size={20} />
             </Link>
-            <h1 className="text-xl font-serif font-bold text-white">Murmures</h1>
+            <h1 className="text-xl font-serif font-bold text-white">Messages Privés</h1>
             <div className="w-9" /> {/* Spacer */}
           </div>
           

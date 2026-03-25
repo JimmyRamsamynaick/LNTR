@@ -35,7 +35,7 @@ const Members: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('members')
-          .select('id, username, avatar, roles, status, bio, banner_color, banner_url, display_name_color, nickname_gradient_color1, nickname_gradient_color2, featured_badges, premium_tier, gold_nickname, flames_count')
+          .select('id, username, avatar, roles, status, bio, banner_color, banner_url, display_name_color, nickname_gradient_color1, nickname_gradient_color2, featured_badges, premium_tier, gold_nickname, flames_count, streak_count')
           .order('last_seen', { ascending: false })
 
         if (error) throw error
@@ -55,7 +55,9 @@ const Members: React.FC = () => {
             nicknameGradientColor2: m.nickname_gradient_color2,
             featured_badges: m.featured_badges || [],
             premium_tier: m.premium_tier || 0,
-            gold_nickname: m.gold_nickname !== false
+            gold_nickname: m.gold_nickname !== false,
+            flames_count: m.flames_count || 0,
+            streak_count: m.streak_count || 0
           }))
           setConnectedMembers(mappedMembers)
           // Mettre à jour le cache local
@@ -291,9 +293,22 @@ const Members: React.FC = () => {
                           ))}
                         </div>
                       </div>
-                      <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs font-bold text-gray-500 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
-                        <LucideFlame size={14} className="text-orange-500/70" />
-                        <span>{m.flames_count || 0}</span>
+                      
+                      {/* Stats Section - Moved from absolute to relative for better stability */}
+                      <div className="px-6 pb-6 mt-auto">
+                        <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                          {/* Série de connexion (Streak) */}
+                          <div className="flex items-center gap-1.5 text-[10px] font-black text-orange-500 bg-orange-500/10 px-3 py-1.5 rounded-full border border-orange-500/20">
+                            <LucideFlame size={12} className="fill-current animate-pulse" />
+                            <span>{m.streak_count || 0}</span>
+                          </div>
+                          
+                          {/* Flammes / Popularité (Heart) */}
+                          <div className="flex items-center gap-1.5 text-[10px] font-black text-pink-500 bg-pink-500/10 px-3 py-1.5 rounded-full border border-pink-500/20">
+                            <LucideSparkles size={12} />
+                            <span>{m.flames_count || 0}</span>
+                          </div>
+                        </div>
                       </div>
                     </Link>
                   </motion.div>

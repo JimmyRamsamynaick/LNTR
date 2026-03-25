@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../AuthContext'
-import { LucideUser, LucidePalette, LucideShield, LucideSave, LucideCheckCircle, LucideCrown, LucideSparkles, LucideArrowLeft, LucideFlame, LucideUpload, LucideLoader2, LucideTrash2, LucideLink } from 'lucide-react'
+import { LucideUser, LucidePalette, LucideShield, LucideSave, LucideCheckCircle, LucideCrown, LucideSparkles, LucideArrowLeft, LucideFlame, LucideUpload, LucideLoader2, LucideTrash2, LucideLink, LucideCat } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { DISCORD_CONFIG } from '../../lib/discord'
 import { supabase } from '../../lib/supabase'
+import Companion, { CompanionType } from '../ui/Companion'
 
 const ProfileSettings: React.FC = () => {
   const { user, updateProfile, loading, refreshUser } = useAuth()
@@ -23,6 +24,14 @@ const ProfileSettings: React.FC = () => {
   const [saved, setSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+
+  // Companion state
+  const [companionName, setCompanionName] = useState('')
+  const [companionType, setCompanionType] = useState<CompanionType>('wolf')
+  const [companionColor, setCompanionColor] = useState('#f59e0b')
+  const [allCompanions, setAllCompanions] = useState<any[]>([])
+  const [companionData, setCompanionData] = useState<any>(null)
+  const [hasManuallySelected, setHasManuallySelected] = useState(false)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -73,8 +82,59 @@ const ProfileSettings: React.FC = () => {
 
   // Initial refresh
   useEffect(() => {
-    refreshUser()
-  }, [])
+    // Ne rafraîchir que si on n'a pas encore de user
+    if (!user) {
+      refreshUser()
+    }
+    
+    // Fetch companions
+    const fetchCompanions = async () => {
+      if (!user) return
+      const { data } = await supabase
+        .from('user_companions')
+        .select('*')
+        .eq('user_id', user.id)
+      
+      if (data && data.length > 0) {
+        setAllCompanions(data)
+        // On ne force l'animal de la BDD que si l'utilisateur n'a pas encore fait de choix dans cette session
+        if (!hasManuallySelected) {
+          const active = data.find(c => c.is_active) || data[0]
+          setCompanionData(active)
+          setCompanionName(active.name)
+          setCompanionType(active.type as CompanionType)
+          setCompanionColor(active.color)
+        }
+      }
+    }
+    fetchCompanions()
+  }, [user])
+
+  // Gérer le changement d'espèce localement
+  const handleSpeciesChange = (type: CompanionType) => {
+    if (!hasPackLanterne) return
+    
+    // Sauvegarder le nom actuel de l'animal AVANT de changer d'espèce pour ne pas le perdre
+    setAllCompanions(prev => prev.map(c => 
+      c.type === companionType ? { ...c, name: companionName, color: companionColor } : c
+    ))
+
+    setCompanionType(type)
+    setHasManuallySelected(true)
+    
+    // Chercher si on a déjà des données pour cette nouvelle espèce
+    const existing = allCompanions.find(c => c.type === type)
+    if (existing) {
+      setCompanionData(existing)
+      setCompanionName(existing.name)
+      setCompanionColor(existing.color)
+    } else {
+      // Nouvel animal
+      setCompanionData(null)
+      setCompanionName('Mon Compagnon')
+      setCompanionColor('#f59e0b')
+    }
+  }
 
   // Sync state when user data is loaded
   useEffect(() => {
@@ -121,9 +181,23 @@ const ProfileSettings: React.FC = () => {
   const hasPackEternel = isStaff || (user?.premium_tier || 0) >= 3
 
   const handleSave = async () => {
+    if (!user) return
+
     try {
       setIsSaving(true)
-      await updateProfile({
+      
+      const savePromises = []
+
+      // Fonction utilitaire pour ajouter un timeout à une promesse
+      const withTimeout = (promise: Promise<any>, ms: number, label: string) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: ${label}`)), ms))
+        ])
+      }
+
+      // 1. Sauvegarde du profil principal
+      savePromises.push(withTimeout(updateProfile({
         bio,
         bannerColor: hasPackLanterne ? bannerColor : '#1a1a1a',
         bannerUrl: hasPackLanterne ? bannerUrl : '',
@@ -135,7 +209,39 @@ const ProfileSettings: React.FC = () => {
         nicknameGradientColor2: hasPackEternel ? nicknameGradientColor2 : undefined,
         featured_badges: featuredBadges,
         custom_url: hasPackEternel ? customUrl.toLowerCase().trim() : undefined
-      })
+      }), 15000, "Profil (Serveur lent)"))
+
+      // 2. Sauvegarde du compagnon (Tiers 2+)
+      if (hasPackLanterne) {
+        console.log("Tentative de sauvegarde compagnon pour:", user.id);
+        
+        // On récupère toutes les données actuelles de l'animal sélectionné s'il existe
+        const existing = allCompanions.find(c => c.type === companionType);
+
+        // On désactive tous les compagnons de l'utilisateur
+        await supabase
+          .from('user_companions')
+          .update({ is_active: false })
+          .eq('user_id', user.id)
+
+        // On active/crée celui sélectionné avec son propre nom et ses stats
+        const companionPromise = supabase
+          .from('user_companions')
+          .upsert({
+            user_id: user.id,
+            name: (companionName || 'Mon Compagnon').trim(),
+            type: companionType,
+            color: companionColor,
+            is_active: true,
+            experience: existing?.experience || 0,
+            level: existing?.level || 1,
+            evolution_stage: existing?.evolution_stage || 'egg'
+          }, { onConflict: 'user_id,type' }) // Crucial pour identifier l'animal par espèce
+        
+        savePromises.push(withTimeout(companionPromise as any, 15000, "Compagnon (Serveur lent)"))
+      }
+
+      await Promise.all(savePromises)
       
       setSaved(true)
       
@@ -143,17 +249,18 @@ const ProfileSettings: React.FC = () => {
       setTimeout(() => {
         setSaved(false)
         navigate('/dashboard')
-      }, 1000)
-    } catch (e) {
-      alert('Erreur lors de la sauvegarde du profil.')
+      }, 800)
+    } catch (e: any) {
+      console.error('Erreur globale:', e)
+      alert(`Erreur: ${e.message}`)
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-20 px-6 md:px-12 bg-night-900 text-white relative">
-      <div className="max-w-4xl mx-auto relative z-10">
+    <div className="min-h-screen pt-32 pb-20 px-4 md:px-8 lg:px-12 bg-night-900 text-white relative">
+      <div className="max-w-6xl mx-auto relative z-10">
         <button 
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-gray-500 hover:text-amber-500 transition-colors mb-12 group"
@@ -560,14 +667,14 @@ const ProfileSettings: React.FC = () => {
                           URL Personnalisée
                           {!hasPackEternel && <LucideCrown size={12} className="text-amber-500" />}
                         </h4>
-                        <p className="text-xs text-gray-500">Créez un lien court unique vers votre profil ({window.location.hostname.includes('ngrok') ? 'ngrok.dev' : 'lntr.site'}/u/votre-pseudo).</p>
+                        <p className="text-xs text-gray-500">Créez un lien court unique vers votre profil (lanterne-nocturne.duckdns.org/u/votre-pseudo).</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 p-4 bg-black/20 rounded-xl border border-white/5">
-                      <span className="text-gray-500 font-mono text-sm">{window.location.hostname.includes('ngrok') ? 'ngrok.dev' : 'lanterne-nocturne.duckdns.org'}/u/</span>
+                      <span className="text-gray-500 font-mono text-sm">lanterne-nocturne.duckdns.org/u/</span>
                       <input 
                         type="text" 
                         placeholder="votre-pseudo"
@@ -583,96 +690,272 @@ const ProfileSettings: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Badges (VIP) */}
-            <div className={`p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden ${!hasPackEclat && 'opacity-60 cursor-not-allowed'}`}>
-              {!hasPackEclat && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] p-6 text-center">
-                  <LucideSparkles className="text-amber-500 w-12 h-12 mb-4 animate-pulse" />
-                  <h4 className="text-xl font-bold mb-2">Packs Requis</h4>
-                  <p className="text-gray-300 text-sm mb-6 max-w-[250px]">Prenez un pack pour débloquer vos badges exclusifs !</p>
-                  <button onClick={() => navigate('/shop')} className="px-6 py-2 bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all text-sm">Voir la Boutique</button>
+        <div className="mt-10 space-y-12">
+          {/* Companion Settings - Pack Lanterne (Tier 2+) */}
+          <div className="relative group/comp-settings w-full">
+            <div className={`relative bg-indigo-500/5 p-6 md:p-12 rounded-[3rem] border border-indigo-500/15 overflow-hidden shadow-2xl backdrop-blur-md ${!hasPackLanterne && 'opacity-50'}`}>
+              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 blur-[150px] rounded-full pointer-events-none group-hover/comp-settings:bg-indigo-500/20 transition-all duration-1000" />
+              
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 relative z-10">
+                {/* Visual Preview - 4/12 on XL */}
+                <div className="xl:col-span-4 flex flex-col items-center justify-center bg-black/40 p-10 rounded-[2.5rem] border border-white/5 shadow-inner min-h-[350px] relative overflow-hidden group/preview">
+                  <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                  <div className="relative z-10 transition-transform duration-500 group-hover/preview:scale-110">
+                    <Companion 
+                      type={companionType} 
+                      stage={companionData?.evolution_stage || 'egg'} 
+                      color={companionColor} 
+                      name={companionName || 'Mon Compagnon'} 
+                      level={companionData?.level || 1} 
+                    />
+                  </div>
+                </div>
+
+                {/* Controls - 8/12 on XL */}
+                <div className="xl:col-span-8 flex flex-col justify-between space-y-12">
+                  {/* Header */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-8">
+                    <div className={`p-6 rounded-[2rem] ${hasPackLanterne ? 'bg-indigo-500/20 text-indigo-400 shadow-[0_0_50px_rgba(99,102,241,0.4)]' : 'bg-white/5 text-gray-500'}`}>
+                      <LucideCat size={40} />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-4xl font-black text-white flex items-center justify-center sm:justify-start gap-4 tracking-tighter">
+                        Compagnon Fidèle
+                        {!hasPackLanterne && <LucideCrown size={24} className="text-amber-500" />}
+                      </h4>
+                      <p className="text-gray-400 font-medium text-xl">Élevez et personnalisez votre animal légendaire.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {/* Name Input */}
+                    <div className="space-y-4">
+                      <label className="text-[12px] uppercase font-black text-gray-500 tracking-[0.3em] px-2">Nom de l'animal</label>
+                      <div className="relative group/input">
+                        <input 
+                          type="text" 
+                          placeholder="Nommez votre compagnon..."
+                          value={companionName}
+                          onChange={(e) => hasPackLanterne && setCompanionName(e.target.value.substring(0, 20))}
+                          disabled={!hasPackLanterne}
+                          className="w-full bg-white/5 border border-white/10 rounded-[1.5rem] px-8 py-6 text-2xl font-bold text-white placeholder:text-gray-800 focus:border-indigo-500/50 focus:bg-white/[0.08] outline-none transition-all shadow-2xl disabled:cursor-not-allowed"
+                        />
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-gray-700 group-focus-within/input:text-indigo-400 transition-colors">
+                          {companionName.length}/20
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Color selection */}
+                    <div className="space-y-4">
+                      <label className="text-[12px] uppercase font-black text-gray-500 tracking-[0.3em] px-2">Couleur d'aura</label>
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-wrap gap-3">
+                          {['#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#3b82f6', '#0ea5e9', '#10b981', '#ffffff', '#6b7280', '#000000'].map(c => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => hasPackLanterne && setCompanionColor(c)}
+                              disabled={!hasPackLanterne}
+                              className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-125 shadow-lg ${companionColor.toLowerCase() === c.toLowerCase() ? 'border-white ring-4 ring-indigo-500/40 scale-125 z-10' : 'border-white/5 hover:border-white/20'}`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="relative shrink-0">
+                            <input 
+                              type="color" 
+                              value={companionColor}
+                              onChange={(e) => hasPackLanterne && setCompanionColor(e.target.value)}
+                              disabled={!hasPackLanterne}
+                              className="w-16 h-16 rounded-2xl bg-transparent border-2 border-white/10 cursor-pointer disabled:cursor-not-allowed p-1 transition-all hover:border-indigo-500/50"
+                            />
+                          </div>
+                          <input 
+                            type="text" 
+                            value={companionColor}
+                            onChange={(e) => hasPackLanterne && setCompanionColor(e.target.value)}
+                            disabled={!hasPackLanterne}
+                            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 text-xl font-mono font-bold text-indigo-400 focus:border-indigo-500/50 outline-none disabled:cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Species selection */}
+                    <div className="col-span-full space-y-6">
+                      <label className="text-[12px] uppercase font-black text-gray-500 tracking-[0.3em] px-2">Choix de l'Espèce</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                        {[
+                          { id: 'lion', icon: "🦁", label: 'Lion' },
+                          { id: 'penguin', icon: "🐧", label: 'Pingouin' },
+                          { id: 'dragon', icon: "🐲", label: 'Dragon' },
+                          { id: 'wolf', icon: "🐺", label: 'Loup' },
+                          { id: 'pig', icon: "🐷", label: 'Cochon' }
+                        ].map((pet) => (
+                          <button
+                            key={pet.id}
+                            type="button"
+                            onClick={() => handleSpeciesChange(pet.id as CompanionType)}
+                            disabled={!hasPackLanterne}
+                            className={`flex flex-col items-center justify-center gap-4 p-6 rounded-[2.5rem] border-2 transition-all duration-500 ${
+                              companionType === pet.id 
+                                ? 'bg-indigo-500/20 border-indigo-500 text-white shadow-[0_20px_50px_rgba(99,102,241,0.3)] scale-[1.05]' 
+                                : 'bg-white/5 border-white/5 text-gray-700 hover:bg-white/10 hover:border-white/10 hover:scale-[1.02]'
+                            } disabled:cursor-not-allowed disabled:opacity-30`}
+                          >
+                            <span className={`text-5xl transition-all duration-700 ${companionType === pet.id ? 'scale-110 drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]' : 'grayscale-[0.6]'}`}>{pet.icon}</span>
+                            <span className={`text-[11px] font-black uppercase tracking-[0.2em] transition-colors ${companionType === pet.id ? 'text-white' : 'text-gray-800'}`}>{pet.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info & Boost Banner */}
+                  {hasPackLanterne && (
+                    <div className="p-8 bg-indigo-500/10 border border-indigo-500/20 rounded-[2.5rem] relative overflow-hidden group/info shadow-2xl">
+                      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 blur-[120px] rounded-full -mr-40 -mt-40 group-hover:bg-indigo-500/20 transition-all duration-1000 pointer-events-none" />
+                      <div className="flex flex-col sm:flex-row items-center gap-10 relative z-10">
+                        <div className="p-6 rounded-2xl bg-indigo-500/25 text-indigo-400 shadow-xl">
+                          <LucideSparkles size={32} className="animate-pulse" />
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                          <p className="text-[12px] text-indigo-400 font-black uppercase tracking-[0.5em] mb-2">Progression & Boost Légendaire</p>
+                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-6">
+                            <p className="text-lg text-gray-400 font-medium">EXP gagnée à chaque action.</p>
+                            {hasPackEternel ? (
+                              <span className="text-amber-500 font-black inline-flex items-center gap-3 bg-amber-500/20 px-6 py-2 rounded-full border border-amber-500/40 shadow-2xl scale-110">
+                                <LucideCrown size={18} />
+                                BOOST x2 ACTIF
+                              </span>
+                            ) : (
+                              <span className="text-indigo-300/80 italic font-bold text-sm bg-indigo-500/10 px-5 py-2 rounded-full border border-indigo-500/20">Boost x2 réservé à l'Éternel</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Lock Screen Overlay - Ensuring it doesn't block other sections */}
+              {!hasPackLanterne && (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-xl p-10 text-center animate-in fade-in zoom-in duration-500">
+                  <div className="max-w-xl bg-indigo-900/20 p-16 rounded-[4rem] border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.5)]">
+                    <div className="w-24 h-24 bg-amber-500/20 rounded-full flex items-center justify-center mb-10 mx-auto shadow-amber-500/30 shadow-3xl">
+                      <LucideCrown className="text-amber-500 w-12 h-12 animate-bounce" />
+                    </div>
+                    <h4 className="text-5xl font-black text-white mb-4 uppercase tracking-tighter">Pack Lanterne</h4>
+                    <p className="text-gray-300 text-lg mb-12 font-medium leading-relaxed">
+                      Débloquez votre propre animal de compagnie évolutif et personnalisable pour une aventure unique.
+                    </p>
+                    <button 
+                      onClick={() => navigate('/shop')} 
+                      className="px-16 py-6 bg-amber-600 text-black font-black rounded-full hover:bg-amber-500 hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_rgba(245,158,11,0.4)] text-lg uppercase tracking-[0.2em]"
+                    >
+                      Voir la boutique
+                    </button>
+                  </div>
                 </div>
               )}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-xl bg-blue-600/20 text-blue-400">
-                  <LucideSparkles size={24} />
-                </div>
-                <h3 className="text-xl font-bold">Badges Exclusifs</h3>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                {[
-                  { id: 'eclat', icon: LucideFlame, label: "Éclat Nocturne", required: 'hasPackEclat' },
-                  { id: 'lanterne', icon: LucideCrown, label: "Lumière Royale", required: 'hasPackLanterne' },
-                  { id: 'eternel', icon: LucideSparkles, label: "Poussière d'Étoile", required: 'hasPackEternel' }
-                ].map((badge, i) => {
-                  const isLocked = badge.required === 'hasPackLanterne' ? !hasPackLanterne : 
-                                  badge.required === 'hasPackEternel' ? !hasPackEternel : !hasPackEclat;
-                  const isFeatured = featuredBadges.includes(badge.id);
-
-                  const toggleBadge = () => {
-                    if (isLocked) return;
-                    if (isFeatured) {
-                      setFeaturedBadges(prev => prev.filter(id => id !== badge.id));
-                    } else {
-                      setFeaturedBadges(prev => [...prev, badge.id]);
-                    }
-                  };
-
-                  return (
-                    <div 
-                      key={i} 
-                      onClick={toggleBadge}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all group relative ${
-                        isLocked 
-                          ? 'bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed' 
-                          : isFeatured
-                            ? 'bg-amber-500/20 border-amber-500/50 cursor-pointer scale-105 shadow-[0_0_20px_rgba(255,170,0,0.2)]'
-                            : 'bg-white/5 border-white/5 hover:border-amber-500/20 cursor-pointer'
-                      }`}
-                    >
-                      <badge.icon className={`w-8 h-8 ${isLocked ? 'text-gray-700' : isFeatured ? 'text-amber-500' : 'text-gray-500 group-hover:text-amber-500'} transition-colors`} />
-                      <span className={`text-[10px] uppercase font-bold ${isFeatured ? 'text-amber-500' : 'text-gray-600'}`}>{badge.label}</span>
-                      {isLocked && (
-                        <div className="absolute -top-1 -right-1">
-                          <LucideShield size={12} className="text-gray-700" />
-                        </div>
-                      )}
-                      {!isLocked && isFeatured && (
-                        <div className="absolute -top-1 -right-1 bg-amber-500 text-black rounded-full p-0.5">
-                          <LucideCheckCircle size={12} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
+          </div>
 
-            <div className="pt-4">
-              <button 
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`w-full py-5 ${isSaving ? 'bg-amber-600/50 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500'} text-black font-bold rounded-2xl transition-all shadow-[0_0_30px_rgba(255,170,0,0.2)] flex items-center justify-center gap-3 text-lg`}
-              >
-                {isSaving ? (
-                  <>
-                    <LucideLoader2 size={24} className="animate-spin" />
-                    Sauvegarde en cours...
-                  </>
-                ) : saved ? (
-                  <>
-                    <LucideCheckCircle size={24} />
-                    Profil Sauvegardé !
-                  </>
-                ) : (
-                  <>
-                    <LucideSave size={24} />
-                    Sauvegarder les modifications
-                  </>
-                )}
-              </button>
+          {/* Badges (VIP) */}
+          <div className={`p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden ${!hasPackEclat && 'opacity-60 cursor-not-allowed'}`}>
+            {!hasPackEclat && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] p-6 text-center">
+                <LucideSparkles className="text-amber-500 w-12 h-12 mb-4 animate-pulse" />
+                <h4 className="text-xl font-bold mb-2">Packs Requis</h4>
+                <p className="text-gray-300 text-sm mb-6 max-w-[250px]">Prenez un pack pour débloquer vos badges exclusifs !</p>
+                <button onClick={() => navigate('/shop')} className="px-6 py-2 bg-amber-600 text-black font-black rounded-full hover:bg-amber-500 transition-all text-sm">Voir la Boutique</button>
+              </div>
+            )}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 rounded-xl bg-blue-600/20 text-blue-400">
+                <LucideSparkles size={24} />
+              </div>
+              <h3 className="text-xl font-bold">Badges Exclusifs</h3>
             </div>
+            <div className="flex flex-wrap gap-4">
+              {[
+                { id: 'eclat', icon: LucideFlame, label: "Éclat Nocturne", required: 'hasPackEclat' },
+                { id: 'lanterne', icon: LucideCrown, label: "Lumière Royale", required: 'hasPackLanterne' },
+                { id: 'eternel', icon: LucideSparkles, label: "Poussière d'Étoile", required: 'hasPackEternel' }
+              ].map((badge, i) => {
+                const isLocked = badge.required === 'hasPackLanterne' ? !hasPackLanterne : 
+                                badge.required === 'hasPackEternel' ? !hasPackEternel : !hasPackEclat;
+                const isFeatured = featuredBadges.includes(badge.id);
+
+                const toggleBadge = () => {
+                  if (isLocked) return;
+                  if (isFeatured) {
+                    setFeaturedBadges(prev => prev.filter(id => id !== badge.id));
+                  } else {
+                    setFeaturedBadges(prev => [...prev, badge.id]);
+                  }
+                };
+
+                return (
+                  <button 
+                    key={i} 
+                    type="button"
+                    onClick={toggleBadge}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all group relative ${
+                      isLocked 
+                        ? 'bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed' 
+                        : isFeatured
+                          ? 'bg-amber-500/20 border-amber-500/50 cursor-pointer scale-105 shadow-[0_0_20px_rgba(255,170,0,0.2)]'
+                          : 'bg-white/5 border-white/5 hover:border-amber-500/20 cursor-pointer'
+                    }`}
+                  >
+                    <badge.icon className={`w-8 h-8 ${isLocked ? 'text-gray-700' : isFeatured ? 'text-amber-500' : 'text-gray-500 group-hover:text-amber-500'} transition-colors`} />
+                    <span className={`text-[10px] uppercase font-bold ${isFeatured ? 'text-amber-500' : 'text-gray-600'}`}>{badge.label}</span>
+                    {isLocked && (
+                      <div className="absolute -top-1 -right-1">
+                        <LucideShield size={12} className="text-gray-700" />
+                      </div>
+                    )}
+                    {!isLocked && isFeatured && (
+                      <div className="absolute -top-1 -right-1 bg-amber-500 text-black rounded-full p-0.5">
+                        <LucideCheckCircle size={12} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`w-full py-5 ${isSaving ? 'bg-amber-600/50 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500'} text-black font-bold rounded-2xl transition-all shadow-[0_0_30px_rgba(255,170,0,0.2)] flex items-center justify-center gap-3 text-lg`}
+            >
+              {isSaving ? (
+                <>
+                  <LucideLoader2 size={24} className="animate-spin" />
+                  Sauvegarde en cours...
+                </>
+              ) : saved ? (
+                <>
+                  <LucideCheckCircle size={24} />
+                  Profil Sauvegardé !
+                </>
+              ) : (
+                <>
+                  <LucideSave size={24} />
+                  Sauvegarder les modifications
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

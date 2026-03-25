@@ -187,31 +187,46 @@ $$ language plpgsql security definer;
 
 -- Fonction: Gérer la série de connexion (Daily Streak)
 create or replace function public.update_daily_streak(user_id_param text)
-returns integer as $$
+returns jsonb as $$
 declare
     last_streak timestamp with time zone;
     current_streak integer;
+    today_date date := current_date;
+    last_streak_date date;
+    exp_to_add integer := 0;
 begin
-    select last_streak_at, streak_count into last_streak, current_streak 
+    select last_streak_at, coalesce(streak_count, 0) into last_streak, current_streak 
     from public.members 
     where id = user_id_param;
 
-    -- Si jamais connecté ou dernière connexion > 48h (série brisée)
-    if last_streak is null or last_streak < (now() - interval '48 hours') then
-        update public.members 
-        set streak_count = 1, last_streak_at = now() 
-        where id = user_id_param;
-        return 1;
-    -- Si déjà connecté aujourd'hui (< 24h et même jour calendaire approx)
-    elsif last_streak > (now() - interval '24 hours') then
-        return current_streak;
-    -- Si connecté hier (entre 24h et 48h)
-    else
-        update public.members 
-        set streak_count = coalesce(streak_count, 0) + 1, last_streak_at = now() 
-        where id = user_id_param;
-        return current_streak + 1;
+    -- Cas 1: Première connexion de l'histoire
+    if last_streak is null then
+        update public.members set streak_count = 1, last_streak_at = now() where id = user_id_param;
+        -- Donner EXP compagnon
+        perform public.add_companion_exp(user_id_param, 100);
+        return jsonb_build_object('streak_count', 1, 'exp_gained', 100);
     end if;
+
+    last_streak_date := last_streak::date;
+
+    -- Cas 2: Déjà connecté aujourd'hui (même date calendaire)
+    if last_streak_date = today_date then
+        return jsonb_build_object('streak_count', current_streak, 'exp_gained', 0);
+    end if;
+
+    -- Cas 3: Connecté hier (date calendaire aujourd'hui - 1)
+    if last_streak_date = (today_date - interval '1 day')::date then
+        update public.members set streak_count = current_streak + 1, last_streak_at = now() where id = user_id_param;
+        -- Donner EXP compagnon
+        perform public.add_companion_exp(user_id_param, 100);
+        return jsonb_build_object('streak_count', current_streak + 1, 'exp_gained', 100);
+    end if;
+
+    -- Cas 4: Série brisée (plus de 1 jour d'écart)
+    update public.members set streak_count = 1, last_streak_at = now() where id = user_id_param;
+    -- Donner EXP compagnon
+    perform public.add_companion_exp(user_id_param, 100);
+    return jsonb_build_object('streak_count', 1, 'exp_gained', 100);
 end;
 $$ language plpgsql security definer;
 
@@ -285,3 +300,98 @@ create index if not exists idx_comments_profile_id on public.profile_comments(pr
 create index if not exists idx_notifications_user_id on public.notifications(user_id);
 create index if not exists idx_shoutbox_created_at on public.shoutbox(created_at desc);
 create index if not exists idx_messages_conversation on public.private_messages(from_id, to_id);
+
+-- Table: user_companions (Système de compagnons pour Tiers 2/3)
+-- On modifie pour permettre plusieurs compagnons par utilisateur
+drop table if exists public.user_companions cascade;
+
+create table public.user_companions (
+    id uuid default gen_random_uuid() primary key,
+    user_id text references public.members(id) on delete cascade,
+    type text not null, -- 'lion', 'penguin', 'dragon', 'wolf', 'pig'
+    name text default 'Mon Compagnon',
+    color text default '#f59e0b',
+    level integer default 1,
+    experience integer default 0,
+    evolution_stage text default 'egg',
+    is_active boolean default false, -- Un seul actif à la fois
+    last_interaction_at timestamp with time zone default now(),
+    created_at timestamp with time zone default now(),
+    unique(user_id, type) -- Empêche les doublons d'espèces pour un même utilisateur
+);
+
+-- Index pour les performances
+create index if not exists idx_user_companions_user_id on public.user_companions(user_id);
+create index if not exists idx_user_companions_active on public.user_companions(user_id, is_active) where is_active = true;
+
+-- Fonction: Ajouter de l'EXP au compagnon ACTIF
+create or replace function public.add_companion_exp(user_id_param text, exp_amount integer)
+returns jsonb as $$
+declare
+    current_tier integer;
+    final_exp integer;
+    companion_record record;
+    new_level integer;
+    new_stage text;
+    level_up boolean := false;
+    stage_up boolean := false;
+begin
+    -- 1. Récupérer le Tiers pour le boost x2
+    select premium_tier into current_tier from public.members where id = user_id_param;
+    
+    if current_tier >= 3 then
+        final_exp := exp_amount * 2;
+    else
+        final_exp := exp_amount;
+    end if;
+
+    -- 2. Récupérer le compagnon ACTIF
+    select * into companion_record from public.user_companions 
+    where user_id = user_id_param and is_active = true;
+    
+    if companion_record is null then
+        return jsonb_build_object('error', 'No active companion found');
+    end if;
+
+    -- 3. Mise à jour de l'EXP
+    companion_record.experience := companion_record.experience + final_exp;
+    
+    -- 4. Logique de Level Up (1000 exp par niveau)
+    new_level := (companion_record.experience / 1000) + 1;
+    if new_level > companion_record.level then
+        level_up := true;
+    end if;
+
+    -- 5. Logique d'Évolution
+    if new_level >= 30 then new_stage := 'adult';
+    elsif new_level >= 15 then new_stage := 'teen';
+    elsif new_level >= 5 then new_stage := 'baby';
+    else new_stage := 'egg';
+    end if;
+
+    if new_stage != companion_record.evolution_stage then
+        stage_up := true;
+    end if;
+
+    -- 6. Update DB
+    update public.user_companions set
+        experience = companion_record.experience,
+        level = new_level,
+        evolution_stage = new_stage,
+        last_interaction_at = now()
+    where id = companion_record.id;
+
+    return jsonb_build_object(
+        'exp_gained', final_exp,
+        'total_exp', companion_record.experience,
+        'level', new_level,
+        'stage', new_stage,
+        'level_up', level_up,
+        'stage_up', stage_up
+    );
+end;
+$$ language plpgsql security definer;
+
+-- ==========================================
+-- FIN DU SCHEMA
+-- ==========================================

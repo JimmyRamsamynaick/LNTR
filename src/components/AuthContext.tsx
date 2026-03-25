@@ -35,8 +35,8 @@ interface AuthContextType {
   login: () => void
   logout: () => void
   handleCallback: (code: string) => Promise<void>
-  updateStatus: (status: DiscordStatus) => void
-  updateProfile: (data: Partial<DiscordUser>) => void
+  updateStatus: (status: DiscordStatus) => Promise<void>
+  updateProfile: (data: Partial<DiscordUser>) => Promise<void>
   refreshUser: () => Promise<void>
 }
 
@@ -46,9 +46,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<DiscordUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refreshUser = React.useCallback(async () => {
-    // On essaie de récupérer l'utilisateur depuis l'état ou le localStorage
-    let currentUser = user
+  const refreshUser = React.useCallback(async (userOverride?: DiscordUser) => {
+    // On essaie de récupérer l'utilisateur depuis l'argument, l'état ou le localStorage
+    let currentUser = userOverride || user
     if (!currentUser) {
       const storedUser = localStorage.getItem('discord_user')
       if (storedUser) currentUser = JSON.parse(storedUser)
@@ -116,17 +116,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           custom_url: memberData?.custom_url
         }
 
+        // 4. Mettre à jour la série de connexion (Streak)
+        const { data: streakData, error: streakError } = await supabase.rpc('update_daily_streak', { user_id_param: currentUser.id })
+        
+        if (!streakError && streakData) {
+          updatedUser.streak_count = streakData.streak_count
+        }
+
+        // 5. UN SEUL SETUSER à la fin pour éviter le flickering 0 -> 1
         setUser(updatedUser)
         localStorage.setItem('discord_user', JSON.stringify(updatedUser))
 
-        // Mettre à jour la série de connexion (Streak)
-        const { data: newStreak } = await supabase.rpc('update_daily_streak', { user_id_param: currentUser.id })
-        if (newStreak !== undefined) {
-          updatedUser.streak_count = newStreak
-          setUser({ ...updatedUser })
-        }
-
-        // Mettre à jour Supabase avec les nouvelles infos Discord (avatar/rôles)
+        // 6. Mettre à jour Supabase avec les nouvelles infos Discord (avatar/rôles)
         await supabase
           .from('members')
           .update({ 
@@ -150,7 +151,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const parsedUser = JSON.parse(storedUser)
         setUser(parsedUser)
         // Refresh roles and avatar immediately after loading from storage
-        refreshUser()
+        refreshUser(parsedUser)
       } catch (error) {
         console.error('Failed to parse stored user:', error)
         localStorage.removeItem('discord_user')

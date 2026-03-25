@@ -6,6 +6,16 @@ import { DISCORD_CONFIG } from '../../lib/discord'
 import { DiscordUser, useAuth } from '../AuthContext'
 import StatusIndicator from '../ui/StatusIndicator'
 import { supabase } from '../../lib/supabase'
+import Companion, { CompanionType, EvolutionStage } from '../ui/Companion'
+
+interface CompanionData {
+  type: CompanionType
+  stage: EvolutionStage
+  color: string
+  name: string
+  level: number
+  experience: number
+}
 
 interface Comment {
   id: string
@@ -66,6 +76,7 @@ const UserProfile: React.FC = () => {
   const [selectedGiftType, setSelectedGiftType] = useState<'bougie' | 'etoile' | 'lanterne' | null>(null)
   const [isSendingGift, setIsSendingGift] = useState(false)
   const [loading, setLoading] = useState(!member)
+  const [companion, setCompanion] = useState<CompanionData | null>(null)
 
   useEffect(() => {
     const fetchMember = async () => {
@@ -99,6 +110,25 @@ const UserProfile: React.FC = () => {
           }
           setMember(userData)
           localStorage.setItem(`profile_${id}`, JSON.stringify(userData))
+        }
+
+        // Fetch Companion ACTIF
+        const { data: companionData } = await supabase
+          .from('user_companions')
+          .select('*')
+          .eq('user_id', id)
+          .eq('is_active', true)
+          .single()
+        
+        if (companionData) {
+          setCompanion({
+            type: companionData.type as CompanionType,
+            stage: companionData.evolution_stage as EvolutionStage,
+            color: companionData.color,
+            name: companionData.name,
+            level: companionData.level,
+            experience: companionData.experience
+          })
         }
 
         if (currentUser && id) {
@@ -310,6 +340,9 @@ const UserProfile: React.FC = () => {
           type: 'comment',
           content: commentContent.substring(0, 50) + (commentContent.length > 50 ? '...' : '')
         })
+
+        // EXP pour le compagnon du visiteur (celui qui commente)
+        await supabase.rpc('add_companion_exp', { user_id_param: currentUser.id, exp_amount: 50 })
       }
     } catch (e) {
       console.error('Failed to add comment:', e)
@@ -318,8 +351,11 @@ const UserProfile: React.FC = () => {
     }
   }
 
-  const handleAddReply = async (commentId: string) => {
+  const handleReplyComment = async (commentId: string) => {
     if (!currentUser || !replyContent.trim()) return
+    const content = replyContent.trim()
+    setReplyContent('')
+    setReplyingTo(null)
     try {
       const { error } = await supabase
         .from('profile_comments')
@@ -328,15 +364,18 @@ const UserProfile: React.FC = () => {
           user_id: currentUser.id,
           username: currentUser.username,
           avatar: currentUser.avatar,
-          content: replyContent,
+          content: content,
           parent_id: commentId
         })
       if (error) throw error
-      setReplyContent('')
-      setReplyingTo(null)
+      
+      // EXP pour le compagnon du visiteur (celui qui répond)
+      await supabase.rpc('add_companion_exp', { user_id_param: currentUser.id, exp_amount: 30 })
     } catch (e) {
-      console.error('Failed to add reply:', e)
-      alert('Erreur lors de l\'ajout de la réponse.')
+      console.error('Failed to reply:', e)
+      setReplyContent(content)
+      setReplyingTo(commentId)
+      alert('Erreur lors de la réponse.')
     }
   }
 
@@ -382,7 +421,7 @@ const UserProfile: React.FC = () => {
   }
 
   const handleSendShout = async () => {
-    if (!currentUser || !shoutMessage.trim()) return
+    if (!currentUser || !shoutMessage.trim() || !member) return
     try {
       const { error } = await supabase
         .from('shoutbox')
@@ -392,12 +431,23 @@ const UserProfile: React.FC = () => {
           avatar: currentUser.avatar,
           content: shoutMessage.trim(),
           premium_tier: currentUser.premium_tier || 0,
-          roles: currentUser.roles || []
+          roles: currentUser.roles || [],
+          recipient_id: member.id,
+          recipient_username: member.username
         })
       if (error) throw error
+      
+      // Notification pour le destinataire
+      await supabase.from('notifications').insert({
+        user_id: member.id,
+        from_username: currentUser.username,
+        type: 'whisper',
+        content: shoutMessage.trim().substring(0, 50) + (shoutMessage.length > 50 ? '...' : '')
+      })
+
       setShoutMessage('')
       setShowShoutModal(false)
-      alert('Votre murmure a été envoyé au dashboard !')
+      alert(`Votre murmure privé a été envoyé à ${member.username} !`)
     } catch (e) {
       console.error('Failed to shout:', e)
       alert('Erreur lors de l\'envoi du murmure.')
@@ -593,6 +643,60 @@ const UserProfile: React.FC = () => {
           </div>
 
           <div className="lg:col-span-8 xl:col-span-8 space-y-6 md:gap-10">
+            {/* Compagnon (Affiché pour tout le monde si le membre en a un) */}
+            {companion && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-8 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent border border-white/10 backdrop-blur-xl shadow-2xl relative overflow-hidden group/companion"
+              >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none group-hover/companion:bg-amber-500/10 transition-colors duration-700" />
+                
+                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                  <Companion 
+                    type={companion.type} 
+                    stage={companion.stage} 
+                    color={companion.color} 
+                    name={companion.name} 
+                    level={companion.level} 
+                  />
+
+                  <div className="flex-1 w-full space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-2xl font-serif font-black uppercase tracking-widest text-white">
+                        {companion.name}
+                      </h3>
+                      <div className="px-3 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                        Niveau {companion.level}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                        <span>Expérience</span>
+                        <span>{companion.experience % 1000} / 1000 XP</span>
+                      </div>
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(companion.experience % 1000) / 10}%` }}
+                          className="h-full bg-gradient-to-r from-amber-600 to-amber-400"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400 italic font-light leading-relaxed">
+                      "Ce fidèle compagnon grandit au fil des nuits passées sous la Lanterne. 
+                      {companion.stage === 'egg' ? ' Il semble sur le point d\'éclore...' : 
+                       companion.stage === 'baby' ? ' Il est encore petit mais plein d\'énergie !' : 
+                       companion.stage === 'teen' ? ' Il commence à devenir imposant.' : 
+                       ' C\'est désormais un protecteur accompli.'}"
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-4 mb-5">
@@ -617,16 +721,16 @@ const UserProfile: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 transition-colors col-span-1 sm:col-span-2">
-                <div className="flex items-center justify-between mb-5">
+              <div className="p-6 md:p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 transition-colors col-span-1 sm:col-span-2">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                   <div className="flex items-center gap-4">
                     <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:scale-110 transition-transform"><LucideHeart className="w-6 h-6" /></div>
-                    <h3 className="text-xl font-black uppercase tracking-widest">Vitrine de Cadeaux</h3>
+                    <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-center sm:text-left">Vitrine de Cadeaux</h3>
                   </div>
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{gifts.length} Cadeaux reçus</span>
+                  <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-full border border-white/5">{gifts.length} Cadeaux reçus</span>
                 </div>
                 {gifts.length > 0 ? (
-                  <div className="flex flex-wrap gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-4">
                     {gifts.map((gift) => (
                       <div key={gift.id} className="relative group/gift">
                         <div className={`p-4 rounded-2xl border transition-all ${gift.gift_type === 'bougie' ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : gift.gift_type === 'etoile' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-violet-500/10 border-violet-500/30 text-violet-400'}`}>
@@ -721,7 +825,7 @@ const UserProfile: React.FC = () => {
                               <textarea value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder="Votre réponse..." className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white outline-none focus:border-amber-500/50 transition-all resize-none" />
                               <div className="flex justify-end gap-2 mt-2">
                                 <button onClick={() => setReplyingTo(null)} className="px-4 py-1.5 text-xs text-gray-500 hover:text-white transition-colors">Annuler</button>
-                                <button onClick={() => handleAddReply(comment.id)} disabled={!replyContent.trim()} className="px-4 py-1.5 text-xs bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all disabled:opacity-50">Répondre</button>
+                                <button onClick={() => handleReplyComment(comment.id)} disabled={!replyContent.trim()} className="px-4 py-1.5 text-xs bg-amber-600 text-black font-bold rounded-full hover:bg-amber-500 transition-all disabled:opacity-50">Répondre</button>
                               </div>
                             </div>
                           )}
