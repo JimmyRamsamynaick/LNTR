@@ -65,6 +65,8 @@ create table if not exists public.shoutbox (
     content text not null,
     premium_tier integer default 0,
     roles jsonb default '[]'::jsonb,
+    recipient_id text references public.members(id) on delete cascade,
+    recipient_username text,
     created_at timestamp with time zone default now()
 );
 
