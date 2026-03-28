@@ -342,12 +342,20 @@ const Dashboard: React.FC = () => {
 
   const markAsRead = async () => {
     if (user) {
-      await supabase
+      // Optimistic update
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      localStorage.setItem(`cache_notifs_${user.id}`, JSON.stringify(notifications.map(n => ({ ...n, read: true }))))
+      
+      const { error } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('user_id', user.id)
       
-      setNotifications(notifications.map(n => ({ ...n, read: true })))
+      if (error) {
+        console.error('Failed to mark notifications as read:', error)
+        // Optionally revert on error if needed, but let's keep it simple for now
+        // fetchData()
+      }
     }
   }
 
