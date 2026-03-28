@@ -1048,7 +1048,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Gifts Showcase */}
-            <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
+            <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/5 blur-[100px] rounded-full pointer-events-none group-hover:bg-pink-500/10 transition-colors duration-700" />
               
               <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-10 relative z-10">
