@@ -100,10 +100,12 @@ const Shoutbox: React.FC = () => {
         payload.recipient_id = whisperTarget.id
         payload.recipient_username = whisperTarget.username
         
+        const senderName = user.incognito_mode ? 'Un membre anonyme' : user.username;
+        
         // Notification pour le destinataire
         await supabase.from('notifications').insert({
           user_id: whisperTarget.id,
-          from_username: user.username,
+          from_username: senderName,
           type: 'whisper',
           content: newShout.trim().substring(0, 50) + (newShout.length > 50 ? '...' : '')
         })

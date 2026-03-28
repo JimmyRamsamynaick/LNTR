@@ -255,9 +255,12 @@ const UserProfile: React.FC = () => {
           .insert({ follower_id: currentUser.id, following_id: member.id })
         setIsFollowing(true)
         setFollowCount(prev => prev + 1)
+        
+        const senderName = currentUser.incognito_mode ? 'Un membre anonyme' : currentUser.username;
+        
         await supabase.from('notifications').insert({
           user_id: member.id,
-          from_username: currentUser.username,
+          from_username: senderName,
           type: 'follow',
           content: 'a commencé à vous suivre !'
         })
@@ -292,15 +295,19 @@ const UserProfile: React.FC = () => {
           from_id: currentUser.id,
           to_id: member.id,
           gift_type: selectedGiftType,
-          message: giftMessage.trim() || null
+          message: giftMessage.trim() || null,
+          is_incognito: currentUser.incognito_mode || false
         })
         .select()
         .single()
 
       if (error) throw error
+      
+      const senderName = currentUser.incognito_mode ? 'Un membre anonyme' : currentUser.username;
+      
       await supabase.from('notifications').insert({
         user_id: member.id,
-        from_username: currentUser.username,
+        from_username: senderName,
         type: 'gift',
         content: `vous a offert un cadeau : ${selectedGiftType === 'bougie' ? 'Bougie' : selectedGiftType === 'etoile' ? 'Étoile' : 'Lanterne Rare'} !`
       })
@@ -334,9 +341,11 @@ const UserProfile: React.FC = () => {
         })
       if (error) throw error
       if (id !== currentUser.id) {
+        const senderName = currentUser.incognito_mode ? 'Un membre anonyme' : currentUser.username;
+
         await supabase.from('notifications').insert({
           user_id: id,
-          from_username: currentUser.username,
+          from_username: senderName,
           type: 'comment',
           content: commentContent.substring(0, 50) + (commentContent.length > 50 ? '...' : '')
         })
@@ -405,9 +414,11 @@ const UserProfile: React.FC = () => {
           read: false
         })
       if (msgError) throw msgError
+      const senderName = currentUser.incognito_mode ? 'Un membre anonyme' : currentUser.username;
+
       await supabase.from('notifications').insert({
         user_id: id,
-        from_username: currentUser.username,
+        from_username: senderName,
         type: 'message',
         content: chatMessage.substring(0, 50) + (chatMessage.length > 50 ? '...' : '')
       })
@@ -438,9 +449,11 @@ const UserProfile: React.FC = () => {
       if (error) throw error
       
       // Notification pour le destinataire
+      const senderName = currentUser.incognito_mode ? 'Un membre anonyme' : currentUser.username;
+
       await supabase.from('notifications').insert({
         user_id: member.id,
-        from_username: currentUser.username,
+        from_username: senderName,
         type: 'whisper',
         content: shoutMessage.trim().substring(0, 50) + (shoutMessage.length > 50 ? '...' : '')
       })
@@ -530,6 +543,16 @@ const UserProfile: React.FC = () => {
       if (error) throw error
       if (data === true) {
         setMember(prev => prev ? { ...prev, flames_count: (prev.flames_count || 0) + 1 } : null)
+        
+        const senderName = currentUser.incognito_mode ? 'Un membre anonyme' : currentUser.username;
+        
+        // Notification pour le membre
+        await supabase.from('notifications').insert({
+          user_id: member.id,
+          from_username: senderName,
+          type: 'flame',
+          content: 'a allumé une flamme sur votre profil !'
+        })
       } else {
         alert("Vous avez déjà attribué une flamme à ce membre au cours des dernières 24 heures.")
       }

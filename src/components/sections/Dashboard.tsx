@@ -317,12 +317,14 @@ const Dashboard: React.FC = () => {
       })
 
     if (!msgError) {
+      const senderName = user.incognito_mode ? 'Un membre anonyme' : user.username;
+
       // Send notification to the recipient
       await supabase
         .from('notifications')
         .insert({
           user_id: selectedChat.id,
-          from_username: user.username,
+          from_username: senderName,
           type: 'message',
           content: messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : '')
         })
@@ -765,6 +767,9 @@ const Dashboard: React.FC = () => {
                               <span className="font-light opacity-80 italic">
                                 {n.type === 'comment' ? 'a laissé un commentaire sur ton profil.' : 
                                  n.type === 'whisper' ? 't\'a envoyé un murmure dans le chat.' :
+                                 n.type === 'gift' ? 't\'a offert une petite attention.' :
+                                 n.type === 'follow' ? 'a commencé à veiller sur toi.' :
+                                 n.type === 'flame' ? 'a allumé une flamme sur ton profil.' :
                                  't\'a envoyé un message privé.'}
                               </span>
                             </p>
@@ -1044,14 +1049,16 @@ const Dashboard: React.FC = () => {
 
             {/* Gifts Showcase */}
             <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden group">
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/5 blur-[100px] rounded-full pointer-events-none group-hover:bg-pink-500/10 transition-colors duration-700" />
+              
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-10 relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:rotate-12 transition-transform">
+                  <div className="p-3 rounded-2xl bg-pink-600/20 text-pink-400 group-hover:rotate-12 transition-transform shadow-lg shadow-pink-500/10">
                     <LucideHeart className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-serif font-black uppercase tracking-widest">Tes Cadeaux Reçus</h3>
+                  <h3 className="text-xl md:text-2xl font-serif font-black uppercase tracking-widest text-white">Tes Cadeaux Reçus</h3>
                 </div>
-                <div className="grid grid-cols-3 gap-3 w-full lg:w-auto">
+                <div className="grid grid-cols-3 gap-2 w-full lg:w-auto">
                   {[
                     { type: 'bougie', icon: LucideFlame, color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
                     { type: 'etoile', icon: LucideSparkles, color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
@@ -1059,8 +1066,8 @@ const Dashboard: React.FC = () => {
                   ].map(g => {
                     const count = gifts.filter(gift => gift.gift_type === g.type).length
                     return (
-                      <div key={g.type} className={`flex items-center justify-center gap-2 px-3 py-2 md:px-4 md:py-2 rounded-xl border border-white/5 ${g.bgColor} ${g.color} shadow-lg backdrop-blur-sm transition-all hover:scale-105`}>
-                        <g.icon size={14} className="md:size-4" />
+                      <div key={g.type} className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-white/5 ${g.bgColor} ${g.color} shadow-lg backdrop-blur-sm transition-all hover:scale-105`}>
+                        <g.icon size={14} />
                         <span className="text-xs md:text-sm font-black">{count}</span>
                       </div>
                     )
@@ -1069,33 +1076,44 @@ const Dashboard: React.FC = () => {
               </div>
 
               {gifts.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4">
-                  {gifts.map((gift) => (
-                    <div key={gift.id} className="relative group/gift-item">
-                      <div className={`p-4 rounded-2xl border border-white/5 transition-all hover:scale-105 ${
-                        gift.gift_type === 'bougie' ? 'bg-orange-500/5 text-orange-500' :
-                        gift.gift_type === 'etoile' ? 'bg-blue-500/5 text-blue-400' :
-                        'bg-violet-500/5 text-violet-400'
-                      }`}>
-                        <div className="flex flex-col items-center gap-2">
-                          {gift.gift_type === 'bougie' ? <LucideFlame size={24} /> :
-                           gift.gift_type === 'etoile' ? <LucideSparkles size={24} /> :
-                           <LucideCrown size={24} />}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 relative z-10">
+                  {gifts.map((gift) => {
+                    const isIncognito = gift.is_incognito || false;
+                    const senderName = isIncognito ? 'Anonyme' : (gift.from_username || 'Anonyme');
+                    
+                    return (
+                      <div key={gift.id} className="relative group/gift-item">
+                        <div className={`p-4 rounded-2xl border border-white/5 transition-all hover:scale-110 hover:shadow-xl ${
+                          gift.gift_type === 'bougie' ? 'bg-orange-500/5 text-orange-500 hover:border-orange-500/30' :
+                          gift.gift_type === 'etoile' ? 'bg-blue-500/5 text-blue-400 hover:border-blue-500/30' :
+                          'bg-violet-500/5 text-violet-400 hover:border-violet-500/30'
+                        }`}>
+                          <div className="flex flex-col items-center gap-2">
+                            {gift.gift_type === 'bougie' ? <LucideFlame size={24} className="animate-pulse" /> :
+                             gift.gift_type === 'etoile' ? <LucideSparkles size={24} className="animate-pulse" /> :
+                             <LucideCrown size={24} className="animate-pulse" />}
+                          </div>
+                        </div>
+                        
+                        {/* Tooltip amélioré */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-48 p-4 bg-night-800/95 border border-white/10 rounded-2xl opacity-0 group-hover/gift-item:opacity-100 transition-all z-50 pointer-events-none shadow-2xl backdrop-blur-md scale-95 group-hover/gift-item:scale-100 origin-bottom">
+                          <p className="text-[10px] font-black text-amber-500 uppercase tracking-tighter mb-1.5 flex items-center gap-2">
+                            {isIncognito ? <LucideShield size={10} /> : <LucideUsers size={10} />}
+                            De {senderName}
+                          </p>
+                          {gift.message && <p className="text-[10px] text-gray-300 italic font-light leading-snug line-clamp-3">"{gift.message}"</p>}
+                          <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
+                            <span className="text-[8px] text-gray-600 font-mono uppercase tracking-widest">{new Date(gift.created_at).toLocaleDateString()}</span>
+                            <span className="text-[8px] text-amber-500/50 font-black">LNTR</span>
+                          </div>
                         </div>
                       </div>
-                      
-                      {/* Tooltip */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-night-800 border border-white/10 rounded-xl opacity-0 group-hover/gift-item:opacity-100 transition-opacity z-50 pointer-events-none shadow-2xl">
-                        <p className="text-[10px] font-bold text-amber-500 uppercase mb-1">De {gift.from_username || 'Anonyme'}</p>
-                        {gift.message && <p className="text-[10px] text-gray-400 italic line-clamp-3">"{gift.message}"</p>}
-                        <p className="text-[8px] text-gray-600 mt-2">{new Date(gift.created_at).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
-                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                  <p className="text-gray-500 italic">"Ta vitrine est encore vide... Participe à la vie du sanctuaire pour recevoir tes premiers cadeaux !"</p>
+                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-[2rem] relative z-10 bg-white/[0.02]">
+                  <p className="text-gray-500 italic font-light">"Ta vitrine est encore vide... Participe à la vie du sanctuaire pour recevoir tes premiers cadeaux !"</p>
                 </div>
               )}
             </div>
