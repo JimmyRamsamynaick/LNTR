@@ -45,6 +45,7 @@ const UserProfile: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user: currentUser } = useAuth()
+  const [bannerError, setBannerError] = useState(false)
   
   const [member, setMember] = useState<DiscordUser | null>(() => {
     if (location.state?.memberData) return location.state.memberData
@@ -78,6 +79,14 @@ const UserProfile: React.FC = () => {
   const [loading, setLoading] = useState(!member)
   const [companion, setCompanion] = useState<CompanionData | null>(null)
 
+  const repairSupabaseUrl = (url: string | null) => {
+    if (!url) return null;
+    if (url.includes('gpmlwgouggudwhmlcjyp.supabase.co')) {
+      return url.replace('gpmlwgouggudwhmlcjyp.supabase.co', 'lanterne-nocturne.duckdns.org/supabase');
+    }
+    return url;
+  };
+
   useEffect(() => {
     const fetchMember = async () => {
       if (!id) return
@@ -105,7 +114,7 @@ const UserProfile: React.FC = () => {
             featured_badges: data.featured_badges || [],
             premium_tier: data.premium_tier,
             gold_nickname: data.gold_nickname !== false,
-            bannerUrl: data.banner_url,
+            bannerUrl: repairSupabaseUrl(data.banner_url),
             flames_count: data.flames_count || 0
           }
           setMember(userData)
@@ -583,8 +592,13 @@ const UserProfile: React.FC = () => {
           <div className="lg:col-span-4 xl:col-span-4">
             <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden text-center shadow-2xl group/card">
               <div className="absolute top-0 left-0 w-full h-28 md:h-32 z-0 overflow-hidden">
-                {member.bannerUrl ? (
-                  <img src={member.bannerUrl} className="w-full h-full object-cover opacity-40 group-hover/card:scale-110 transition-transform duration-700" alt="Banner" />
+                {member.bannerUrl && !bannerError ? (
+                  <img 
+                    src={member.bannerUrl} 
+                    onError={() => setBannerError(true)}
+                    className="w-full h-full object-cover opacity-40 group-hover/card:scale-110 transition-transform duration-700" 
+                    alt="Banner" 
+                  />
                 ) : (
                   <div className="w-full h-full opacity-30 transition-colors duration-700" style={{ backgroundColor: member.bannerColor || '#1a1a1a' }} />
                 )}

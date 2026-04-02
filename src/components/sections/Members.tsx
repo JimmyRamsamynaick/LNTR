@@ -20,7 +20,159 @@ const roleConfig = [
   { id: DISCORD_CONFIG.ROLES.MEMBRE, label: 'Membre', icon: LucideUsers, color: 'text-gray-400', bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400/30' }
 ]
 
+const getMemberBadges = (m: DiscordUser) => {
+  const badges: any[] = []
+  
+  const isStaff = m.roles.some(roleId => [
+    DISCORD_CONFIG.ROLES.OWNER,
+    DISCORD_CONFIG.ROLES.CO_OWNER,
+    DISCORD_CONFIG.ROLES.ADMIN,
+    DISCORD_CONFIG.ROLES.STAFF
+  ].includes(roleId))
+
+  // Add premium tier badges based on selection
+  const tiers = [
+    { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+    { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
+    { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
+  ]
+  
+  const featuredIds = m.featured_badges || []
+  const memberTier = isStaff ? 3 : (m.premium_tier || 0)
+  
+  if (featuredIds.length === 0) {
+    // Default behavior: only show the highest tier badge they have access to
+    const highestTier = tiers.filter(t => t.tier <= memberTier).pop()
+    if (highestTier) badges.push(highestTier)
+  } else {
+    // Show all selected badges they have access to
+    tiers.forEach(t => {
+      if (t.tier <= memberTier && featuredIds.includes(t.id)) {
+        badges.push(t)
+      }
+    })
+  }
+
+  // Add all matching discord roles
+  roleConfig.forEach(config => {
+    if (m.roles.includes(config.id)) {
+      badges.push(config)
+    }
+  })
+  
+  return badges
+}
+
+const MemberCard: React.FC<{ member: DiscordUser }> = ({ member: m }) => {
+  const [bannerError, setBannerError] = useState(false)
+  const isStaff = m.roles.some(roleId => [
+    DISCORD_CONFIG.ROLES.OWNER,
+    DISCORD_CONFIG.ROLES.CO_OWNER,
+    DISCORD_CONFIG.ROLES.ADMIN,
+    DISCORD_CONFIG.ROLES.STAFF
+  ].includes(roleId))
+  const isEternel = isStaff || (m.premium_tier || 0) >= 3
+  const hasGoldNickname = isEternel && m.gold_nickname !== false
+  const hasGradientNickname = isEternel && !m.gold_nickname && m.nicknameGradientColor1 && m.nicknameGradientColor2
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.2 }}
+    >
+      <Link 
+        to={`/profile/${m.id}`}
+        state={{ memberData: m }}
+        className="rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl flex flex-col h-full"
+      >
+        {/* Banner Area */}
+        <div className="h-20 w-full relative overflow-hidden">
+          {m.bannerUrl && !bannerError ? (
+            <img 
+              src={m.bannerUrl} 
+              onError={() => setBannerError(true)}
+              className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
+              alt="Banner"
+            />
+          ) : (
+            <div 
+              className="w-full h-full opacity-30" 
+              style={{ backgroundColor: m.bannerColor || '#1a1a1a' }}
+            />
+          )}
+        </div>
+
+        <div className="px-6 pb-8 pt-10 relative flex-1 flex flex-col items-center">
+          {/* Avatar */}
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+            <div className="relative group-hover:scale-110 transition-transform duration-500">
+              <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <img
+                src={m.avatar 
+                  ? `https://cdn.discordapp.com/avatars/${m.id}/${m.avatar}.png?size=128`
+                  : `https://cdn.discordapp.com/embed/avatars/${parseInt(m.id) % 5}.png`
+                }
+                alt={m.username}
+                className="w-20 h-20 rounded-full border-4 border-night-900 relative z-10 shadow-2xl"
+              />
+              <StatusIndicator userId={m.id} size="sm" className="absolute bottom-1 right-1 z-20 border-2 border-night-900 shadow-xl" />
+            </div>
+          </div>
+
+          <h3 
+            className={`text-lg font-serif font-black mb-1 tracking-tight truncate relative z-10 px-2 w-full text-center ${hasGoldNickname ? 'nickname-golden-animated' : (hasGradientNickname ? 'nickname-gradient-animated' : '')}`}
+            style={{ 
+              background: hasGradientNickname ? `linear-gradient(to right, ${m.nicknameGradientColor1} 0%, ${m.nicknameGradientColor2} 50%, ${m.nicknameGradientColor1} 100%)` : (hasGoldNickname ? undefined : 'none'),
+              WebkitBackgroundClip: (hasGradientNickname || hasGoldNickname) ? 'text' : 'initial',
+              color: (hasGoldNickname || hasGradientNickname) ? 'transparent' : (m.displayNameColor || '#FFFFFF'),
+              WebkitTextFillColor: (hasGoldNickname || hasGradientNickname) ? 'transparent' : 'initial'
+            }}
+          >
+            {m.username}
+          </h3>
+          
+          <div className="flex flex-wrap justify-center gap-1.5 mb-6 relative z-10 px-2">
+            {getMemberBadges(m).map((badge, idx) => (
+              <div key={idx} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[8px] font-black uppercase tracking-widest shadow-lg`} title={badge.label}>
+                <badge.icon size={10} />
+              </div>
+            ))}
+          </div>
+
+          <p className="text-gray-400 text-xs italic font-light leading-relaxed line-clamp-2 text-center h-8 mb-6">
+            {m.bio || "Aucune biographie..."}
+          </p>
+
+          <div className="w-full h-px bg-white/5 mb-6" />
+
+          <div className="flex items-center gap-4 text-gray-500 text-[10px] font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-1.5">
+              <LucideFlame size={12} className={`${(m.flames_count || 0) > 0 ? 'text-amber-500 fill-amber-500/20' : ''}`} />
+              <span>{m.flames_count || 0}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <LucideZap size={12} className={`${(m.streak_count || 0) > 0 ? 'text-indigo-400' : ''}`} />
+              <span>{m.streak_count || 0}</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
+
 const Members: React.FC = () => {
+  const repairSupabaseUrl = (url: string | null) => {
+    if (!url) return null;
+    if (url.includes('gpmlwgouggudwhmlcjyp.supabase.co')) {
+      return url.replace('gpmlwgouggudwhmlcjyp.supabase.co', 'lanterne-nocturne.duckdns.org/supabase');
+    }
+    return url;
+  };
+
   // Charger les membres depuis le cache local immédiatement pour un affichage instantané
   const [connectedMembers, setConnectedMembers] = useState<DiscordUser[]>(() => {
     const cached = localStorage.getItem('cached_members')
@@ -49,7 +201,7 @@ const Members: React.FC = () => {
             status: m.status as any,
             bio: m.bio,
             bannerColor: m.banner_color,
-            bannerUrl: m.banner_url,
+            bannerUrl: repairSupabaseUrl(m.banner_url),
             displayNameColor: m.display_name_color,
             nicknameGradientColor1: m.nickname_gradient_color1,
             nicknameGradientColor2: m.nickname_gradient_color2,
@@ -92,54 +244,6 @@ const Members: React.FC = () => {
       return matchesSearch && matchesFilter
     })
   }, [connectedMembers, searchQuery, filterTier])
-
-  const getMemberBadges = (m: DiscordUser) => {
-    const badges = []
-    
-    const isStaff = m.roles.some(roleId => [
-      DISCORD_CONFIG.ROLES.OWNER,
-      DISCORD_CONFIG.ROLES.CO_OWNER,
-      DISCORD_CONFIG.ROLES.ADMIN,
-      DISCORD_CONFIG.ROLES.STAFF
-    ].includes(roleId))
-
-    // Add premium tier badges based on selection
-    const tiers = [
-      { id: 'eclat', tier: 1, label: 'Pack Éclat', icon: LucideFlame, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-      { id: 'lanterne', tier: 2, label: 'Pack Lanterne', icon: LucideCrown, color: 'text-amber-400', bgColor: 'bg-amber-400/10', borderColor: 'border-amber-400/30' },
-      { id: 'eternel', tier: 3, label: 'Pack Éternel', icon: LucideSparkles, color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', borderColor: 'border-yellow-400/30' }
-    ]
-    
-    const featuredIds = m.featured_badges || []
-    const memberTier = isStaff ? 3 : (m.premium_tier || 0)
-    
-    if (featuredIds.length === 0) {
-      // Default behavior: only show the highest tier badge they have access to
-      const highestTier = tiers.filter(t => t.tier <= memberTier).pop()
-      if (highestTier) badges.push(highestTier)
-    } else {
-      // Show all selected badges they have access to
-      tiers.forEach(t => {
-        if (t.tier <= memberTier && featuredIds.includes(t.id)) {
-          badges.push(t)
-        }
-      })
-    }
-
-    // Add discord roles
-    roleConfig.forEach(config => {
-      if (m.roles.includes(config.id)) {
-        badges.push(config)
-      }
-    })
-
-    // Default to Membre if no badges
-    if (badges.length === 0) {
-      badges.push(roleConfig[roleConfig.length - 1])
-    }
-
-    return badges
-  }
 
   return (
     <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 md:px-12 bg-night-900 text-white relative">
@@ -204,116 +308,9 @@ const Members: React.FC = () => {
             ))
           ) : filteredMembers.length > 0 ? (
             <AnimatePresence mode="popLayout">
-              {filteredMembers.map((m) => {
-                const badges = getMemberBadges(m)
-                const isStaff = m.roles.some(roleId => [
-                  DISCORD_CONFIG.ROLES.OWNER,
-                  DISCORD_CONFIG.ROLES.CO_OWNER,
-                  DISCORD_CONFIG.ROLES.ADMIN,
-                  DISCORD_CONFIG.ROLES.STAFF
-                ].includes(roleId))
-                const isEternel = isStaff || (m.premium_tier || 0) >= 3
-                const hasGoldNickname = isEternel && m.gold_nickname !== false
-                const hasGradientNickname = isEternel && !m.gold_nickname && m.nicknameGradientColor1 && m.nicknameGradientColor2
-
-                return (
-                  <motion.div
-                    key={m.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Link 
-                      to={`/profile/${m.id}`}
-                      state={{ memberData: m }}
-                      className="rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-all group relative overflow-hidden backdrop-blur-xl flex flex-col h-full"
-                    >
-                      {/* Banner Area */}
-                      <div className="h-20 w-full relative overflow-hidden">
-                        {m.bannerUrl ? (
-                          <img 
-                            src={m.bannerUrl} 
-                            className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
-                            alt="Banner"
-                          />
-                        ) : (
-                          <div 
-                            className="w-full h-full opacity-30" 
-                            style={{ backgroundColor: m.bannerColor || '#1a1a1a' }}
-                          />
-                        )}
-                      </div>
-
-                      <div className="px-6 pb-8 pt-10 relative flex-1 flex flex-col items-center">
-                        {/* Avatar */}
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2">
-                          <div className="relative group-hover:scale-110 transition-transform duration-500">
-                            <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <img
-                              src={m.avatar 
-                                ? `https://cdn.discordapp.com/avatars/${m.id}/${m.avatar}.png?size=128`
-                                : `https://cdn.discordapp.com/embed/avatars/${parseInt(m.id) % 5}.png`
-                              }
-                              alt={m.username}
-                              className="w-20 h-20 rounded-full border-4 border-night-900 relative z-10 shadow-2xl"
-                            />
-                            <StatusIndicator 
-                              userId={m.id} 
-                              size="sm"
-                              className="absolute bottom-1 right-1 z-20 border-2 border-night-900" 
-                            />
-                          </div>
-                        </div>
-
-                        <h3 
-                          className={`text-lg font-bold mb-4 text-center truncate w-full ${hasGoldNickname ? 'nickname-golden-animated' : (hasGradientNickname ? 'nickname-gradient-animated' : '')}`}
-                          style={{ 
-                            background: hasGradientNickname 
-                              ? `linear-gradient(to right, ${m.nicknameGradientColor1} 0%, ${m.nicknameGradientColor2} 50%, ${m.nicknameGradientColor1} 100%)` 
-                              : (hasGoldNickname ? undefined : 'none'),
-                            WebkitBackgroundClip: (hasGradientNickname || hasGoldNickname) ? 'text' : 'initial',
-                            color: (hasGoldNickname || hasGradientNickname) ? 'transparent' : (m.displayNameColor || '#FFFFFF'),
-                            WebkitTextFillColor: (hasGoldNickname || hasGradientNickname) ? 'transparent' : 'initial'
-                          }}
-                        >
-                          {m.username}
-                        </h3>
-
-                        <div className="flex flex-wrap justify-center gap-1.5 mt-auto">
-                          {badges.slice(0, 3).map((badge, idx) => (
-                            <div 
-                              key={idx} 
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg ${badge.bgColor} border ${badge.borderColor} ${badge.color} text-[8px] font-bold uppercase tracking-wider`}
-                            >
-                              <badge.icon size={8} />
-                              {badge.label}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Stats Section - Moved from absolute to relative for better stability */}
-                      <div className="px-6 pb-6 mt-auto">
-                        <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                          {/* Série de connexion (Streak) */}
-                          <div className="flex items-center gap-1.5 text-[10px] font-black text-orange-500 bg-orange-500/10 px-3 py-1.5 rounded-full border border-orange-500/20">
-                            <LucideFlame size={12} className="fill-current animate-pulse" />
-                            <span>{m.streak_count || 0}</span>
-                          </div>
-                          
-                          {/* Flammes / Popularité (Heart) */}
-                          <div className="flex items-center gap-1.5 text-[10px] font-black text-pink-500 bg-pink-500/10 px-3 py-1.5 rounded-full border border-pink-500/20">
-                            <LucideSparkles size={12} />
-                            <span>{m.flames_count || 0}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                )
-              })}
+              {filteredMembers.map((m) => (
+                <MemberCard key={m.id} member={m} />
+              ))}
             </AnimatePresence>
           ) : (
             <div className="col-span-full py-20 text-center">

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
 import { LucideLogOut, LucideSettings, LucideActivity, LucideZap, LucideShield, LucideCrown, LucideShieldCheck, LucideUsers, LucideStar, LucideBell, LucideMail, LucideArrowLeft, LucideSend, LucideFlame, LucideSparkles, LucideMessageCircle, LucideReply, LucideX, LucideHeart, LucideExternalLink, LucideMessageSquare } from 'lucide-react'
@@ -23,7 +23,8 @@ const roleConfig = [
 ]
 
 const Dashboard: React.FC = () => {
-  const { user, logout, loading, updateStatus, refreshUser } = useAuth()
+  const { user, loading, updateStatus, refreshUser, logout } = useAuth()
+  const [bannerError, setBannerError] = useState(false)
   
   const [notifications, setNotifications] = React.useState<any[]>([])
   const [chats, setChats] = React.useState<any[]>([])
@@ -595,7 +596,18 @@ const Dashboard: React.FC = () => {
 
             {/* Profile Info Card */}
             <div className="p-6 md:p-10 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group shadow-2xl">
-              <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-amber-500/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-0 left-0 w-full h-24 overflow-hidden">
+                {user.bannerUrl && !bannerError ? (
+                  <img 
+                    src={user.bannerUrl} 
+                    onError={() => setBannerError(true)}
+                    className="w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" 
+                    alt="Banner" 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-b from-amber-500/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+                )}
+              </div>
               
               <div className="relative z-10 flex flex-col items-center">
                 <div className="relative mb-6 group-hover:scale-105 transition-transform duration-500">

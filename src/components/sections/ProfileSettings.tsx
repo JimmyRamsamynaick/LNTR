@@ -13,6 +13,7 @@ const ProfileSettings: React.FC = () => {
   const [bio, setBio] = useState('')
   const [bannerColor, setBannerColor] = useState('#1a1a1a')
   const [bannerUrl, setBannerUrl] = useState('')
+  const [bannerError, setBannerError] = useState(false)
   const [displayNameColor, setDisplayNameColor] = useState('#FFFFFF')
   const [customStatus, setCustomStatus] = useState('')
   const [incognitoMode, setIncognitoMode] = useState(false)
@@ -71,6 +72,7 @@ const ProfileSettings: React.FC = () => {
         .getPublicUrl(fileName)
 
       setBannerUrl(publicUrl)
+      setBannerError(false)
       console.log('Successfully uploaded:', publicUrl)
     } catch (error: any) {
       console.error('Full Error Object:', error)
@@ -292,8 +294,13 @@ const ProfileSettings: React.FC = () => {
             <div className="sticky top-32">
               <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-6">Aperçu direct</h3>
               <div className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl relative">
-                {bannerUrl ? (
-                  <img src={bannerUrl} className="h-24 w-full object-cover" alt="Banner" />
+                {bannerUrl && !bannerError ? (
+                  <img 
+                    src={bannerUrl} 
+                    onError={() => setBannerError(true)}
+                    className="h-24 w-full object-cover" 
+                    alt="Banner" 
+                  />
                 ) : (
                   <div className="h-24 w-full" style={{ backgroundColor: bannerColor }} />
                 )}
@@ -410,6 +417,7 @@ const ProfileSettings: React.FC = () => {
                               return
                             }
                             setBannerUrl(val)
+                            setBannerError(false)
                           }}
                           disabled={!hasPackLanterne}
                           placeholder={hasPackEternel ? "URL de l'image ou du GIF..." : "URL de l'image (GIF réservé Éternel)..."}
@@ -465,6 +473,19 @@ const ProfileSettings: React.FC = () => {
                             title="Effacer la bannière"
                           >
                             <LucideTrash2 size={18} />
+                          </button>
+                        )}
+
+                        {user?.discordBannerUrl && bannerUrl !== user.discordBannerUrl && (
+                          <button
+                            onClick={() => {
+                              setBannerUrl(user.discordBannerUrl!)
+                              setBannerError(false)
+                            }}
+                            className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-all border border-indigo-500/20"
+                            title="Utiliser ma bannière Discord"
+                          >
+                            <LucideLink size={18} />
                           </button>
                         )}
                       </div>

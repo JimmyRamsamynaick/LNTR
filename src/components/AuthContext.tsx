@@ -9,12 +9,14 @@ export interface DiscordUser {
   id: string
   username: string
   avatar: string
+  banner?: string
+  discordBannerUrl?: string
   roles: string[]
   status?: string
   custom_status?: string
   bio?: string
   bannerColor?: string
-  bannerUrl?: string
+  bannerUrl?: string | null
   displayNameColor?: string
   nicknameGradientColor1?: string
   nicknameGradientColor2?: string
@@ -41,6 +43,14 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+const repairSupabaseUrl = (url: string | null) => {
+  if (!url) return null;
+  if (url.includes('gpmlwgouggudwhmlcjyp.supabase.co')) {
+    return url.replace('gpmlwgouggudwhmlcjyp.supabase.co', 'lanterne-nocturne.duckdns.org/supabase');
+  }
+  return url;
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<DiscordUser | null>(null)
@@ -92,16 +102,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_LANTERNE)) premium_tier = 2
         else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ECLAT)) premium_tier = 1
 
+        const discordBannerUrl = userResponse.data.banner 
+          ? `https://cdn.discordapp.com/banners/${userResponse.data.id}/${userResponse.data.banner}.${userResponse.data.banner.startsWith('a_') ? 'gif' : 'png'}?size=1024`
+          : undefined
+
         const updatedUser: DiscordUser = {
           ...currentUser,
           username: userResponse.data?.username || currentUser.username,
           avatar: userResponse.data?.avatar || currentUser.avatar,
+          banner: userResponse.data?.banner,
+          discordBannerUrl: discordBannerUrl,
           roles: roles,
           status: memberData?.status || currentUser.status,
           custom_status: memberData?.custom_status || currentUser.custom_status,
           bio: memberData?.bio || currentUser.bio,
           bannerColor: memberData?.banner_color || currentUser.bannerColor,
-          bannerUrl: memberData?.banner_url || currentUser.bannerUrl,
+          bannerUrl: repairSupabaseUrl(memberData?.banner_url),
           displayNameColor: memberData?.display_name_color || currentUser.displayNameColor,
           nicknameGradientColor1: memberData?.nickname_gradient_color1 || currentUser.nicknameGradientColor1,
           nicknameGradientColor2: memberData?.nickname_gradient_color2 || currentUser.nicknameGradientColor2,
@@ -127,12 +143,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(updatedUser)
         localStorage.setItem('discord_user', JSON.stringify(updatedUser))
 
-        // 6. Mettre à jour Supabase avec les nouvelles infos Discord (avatar/rôles)
+        // 6. Mettre à jour Supabase avec les nouvelles infos Discord (avatar/rôles/banner)
         await supabase
           .from('members')
           .update({ 
             avatar: updatedUser.avatar,
             roles: updatedUser.roles,
+            banner_url: updatedUser.bannerUrl,
             premium_tier: updatedUser.premium_tier,
             premium_since: updatedUser.premium_since,
             last_seen: new Date().toISOString()
@@ -268,6 +285,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: userData.avatar,
           roles: userData.roles,
           status: userData.status || 'online',
+          banner_url: userData.bannerUrl,
+          banner_color: userData.bannerColor,
           premium_tier: userData.premium_tier || 0,
           premium_since: userData.premium_since || null,
           last_seen: new Date().toISOString()
@@ -333,13 +352,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_LANTERNE)) premium_tier = 2
       else if (roles.includes(DISCORD_CONFIG.ROLES.VIP_ECLAT)) premium_tier = 1
 
+      const discordBannerUrl = userResponse.data.banner 
+        ? `https://cdn.discordapp.com/banners/${userResponse.data.id}/${userResponse.data.banner}.${userResponse.data.banner.startsWith('a_') ? 'gif' : 'png'}?size=1024`
+        : undefined
+
       const userData: DiscordUser = {
         ...userResponse.data,
+        discordBannerUrl: discordBannerUrl,
         roles: roles,
         status: memberData?.status || 'online',
         bio: memberData?.bio,
         bannerColor: memberData?.banner_color,
-        bannerUrl: memberData?.banner_url,
+        bannerUrl: repairSupabaseUrl(memberData?.banner_url),
         displayNameColor: memberData?.display_name_color,
         nicknameGradientColor1: memberData?.nickname_gradient_color1,
         nicknameGradientColor2: memberData?.nickname_gradient_color2,
